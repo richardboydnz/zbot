@@ -27,6 +27,7 @@ class UrlItem(scrapy.Item):
 
 class LinkItem(scrapy.Item):
     pageId = scrapy.Field()
+    link_num = scrapy.Field()
     from_domain = scrapy.Field()
     from_url = scrapy.Field()
     to_domain = scrapy.Field()

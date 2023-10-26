@@ -9,19 +9,33 @@
 
 BOT_NAME = "myscraper"
 
+LOG_LEVEL = 'INFO'
+
+DB_SETTINGS = {
+    'dbname': 'crown_scraping',
+    'user': 'crown_scraping',
+    'password': 'xAK9q5IMnj1opUh3',
+    'host': '192.168.1.10',
+    'port': '5432'
+}
+
 SPIDER_MODULES = ["myscraper.spiders"]
 NEWSPIDER_MODULE = "myscraper.spiders"
 
 ITEM_PIPELINES = {
    'myscraper.pipelines.DatabasePipeline': 300,
 }
+# DOWNLOADER_MIDDLEWARES = {
+#     'myscraper.middlewares.skip_duplicate_middleware.SkipDuplicateMiddleware': 100,
+#     # ... other middlewares ...
+# }
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "myscraper (+http://www.yourdomain.com)"
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -95,3 +109,35 @@ ROBOTSTXT_OBEY = True
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
+
+
+
+# Enable AutoThrottle to automatically adjust the scraping speed based on the server's response times and load.
+AUTOTHROTTLE_ENABLED = True
+AUTOTHROTTLE_START_DELAY = 5  # Initial delay (in seconds) between requests.
+AUTOTHROTTLE_MAX_DELAY = 60  # Maximum delay (in seconds) between requests.
+
+# Introduce a delay between consecutive requests.
+DOWNLOAD_DELAY = 3  # Delay (in seconds) between consecutive requests.
+
+# Limit the number of concurrent requests.
+CONCURRENT_REQUESTS = 2
+
+# Disable cookies as some sites might track requests using cookies.
+COOKIES_ENABLED = False
+
+# Respect robots.txt. This is a good practice, but it doesn't reduce the chances of getting blocked.
+ROBOTSTXT_OBEY = True
+
+# Limit the depth of your crawl if you don't need to scrape all the pages.
+DEPTH_LIMIT = 0
+
+# Set a limit on the response size to avoid downloading large files.
+DOWNLOAD_MAXSIZE = 10485760  # 10 MB
+
+# Retry middleware settings.
+RETRY_TIMES = 2  # Number of times a request should be retried.
+RETRY_HTTP_CODES = [500, 502, 503, 504, 408]  # HTTP codes that should trigger a retry.
+
+# If you don't want to rotate user agents, set a default user agent.
+USER_AGENT = "ZBot/1.1 (Zavidan link checker)"

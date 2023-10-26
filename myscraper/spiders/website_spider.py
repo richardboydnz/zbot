@@ -3,18 +3,32 @@ import hashlib
 import scrapy
 from myscraper.items import PageItem, UrlItem, LinkItem, TextItem, MarkdownItem
 from urllib.parse import urlparse
+from scrapy.linkextractors import LinkExtractor
+from scrapy.spiders import CrawlSpider, Rule
+
+import logging
 
 import html2text
 from markdownify import markdownify as md
 
-class WebsiteSpider(scrapy.Spider):
-    name = 'website_spider'
-    start_urls = ['http://ballet.zavidan.info/']  # Replace with the website you want to scrape
+# domain = 'ballet.zavidan.info'
+domain = 'www.graceremovals.co.nz'
 
-    def parse(self, response):
+class WebsiteSpider(CrawlSpider):
+    name = 'website_spider'
+    start_urls = ['https://' + domain]  # Replace with the website you want to scrape
+    # start_urls = start_urls
+
+    rules = (
+        Rule(LinkExtractor(allow_domains=[domain]), callback='parse_page', follow=True),
+    )
+
+    def parse_page(self, response):
+        logging.info(f"Scraping URL: {response.url}")
         # Extracting data for the PageItem
         page_item = PageItem()
-        page_item['pageId'] = hashlib.sha256(response.url.encode()).hexdigest()
+        # Hash the content of the page to generate the pageId
+        page_item['pageId'] = hashlib.sha256(response.body).hexdigest()
         page_item['domain'] = urlparse(response.url).netloc
         page_item['initial_date'] = datetime.datetime.now()
         page_item['initial_source_url'] = response.url
@@ -38,13 +52,17 @@ class WebsiteSpider(scrapy.Spider):
         yield url_item
 
         # Extracting links for the LinkItem
-        for link in response.css('a::attr(href)').extract():
+        link_extractor = LinkExtractor()
+
+        # Use the link extractor to extract links from the response
+        for link_num, link in enumerate(link_extractor.extract_links(response), start=1):
             link_item = LinkItem()
             link_item['pageId'] = page_item['pageId']
+            link_item['link_num'] = link_num  # Assign the link_num from enumerate
             link_item['from_domain'] = page_item['domain']
             link_item['from_url'] = response.url
-            link_item['to_domain'] = urlparse(link).netloc
-            link_item['to_url'] = link
+            link_item['to_domain'] = urlparse(link.url).netloc
+            link_item['to_url'] = link.url
             yield link_item
 
         # Extracting data for TextItem and MarkdownItem (assuming a function to convert HTML to Markdown)
@@ -58,6 +76,9 @@ class WebsiteSpider(scrapy.Spider):
         markdown_item['markdown_version'] = md(response.text)
         yield markdown_item
 
-        # Follow links to scrape other pages
-        for link in response.css('a::attr(href)').extract():
-            yield scrapy.Request(link, callback=self.parse)
+        # Extracting links for the LinkItem
+        domain_link_extractor = LinkExtractor(allow_domains=[domain])
+
+        # for link in response.css('a::attr(href)').extract():
+        for link in domain_link_extractor.extract_links(response):
+            yield scrapy.Request(link.url, callback=self.parse)

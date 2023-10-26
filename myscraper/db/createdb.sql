@@ -9,8 +9,8 @@ CREATE TABLE page (
 -- url table
 CREATE TABLE url (
     URL VARCHAR(2048) PRIMARY KEY,
-    return_code SMALLINT NOT NULL,
-    mime VARCHAR(255) NOT NULL,
+    return_code SMALLINT,
+    mime VARCHAR(255) ,
     pageId CHAR(64) REFERENCES page(pageId),
     initial_referrer VARCHAR(2048),
     date_updated TIMESTAMP NOT NULL,
@@ -25,12 +25,13 @@ CREATE TABLE url (
 
 -- link table
 CREATE TABLE link (
-    id SERIAL PRIMARY KEY,
     pageId CHAR(64) REFERENCES page(pageId),
+    link_num INTEGER NOT NULL,
+    PRIMARY KEY (pageId, link_num)  -- Composite primary key
     from_domain VARCHAR(255) NOT NULL,
     from_url VARCHAR(2048) NOT NULL,
     to_domain VARCHAR(255) NOT NULL,
-    to_url VARCHAR(2048) NOT NULL
+    to_url VARCHAR(2048) NOT NULL,
 );
 
 -- text table
