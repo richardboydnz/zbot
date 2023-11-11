@@ -5,81 +5,154 @@
 
 
 # useful for handling different item types with a single interface
-from itemadapter import ItemAdapter
 import psycopg2
-from myscraper.items import PageItem, UrlItem, LinkItem, TextItem, MarkdownItem
+from .items import ContentItem, DownloadItem, LinkItem, HtmlContentItem
+from urllib.parse import urlparse
 
 
 class MyscraperPipeline:
     def process_item(self, item, spider):
         return item
 
-class DatabasePipeline:
-    def open_spider(self, spider):
+import psycopg2
 
+class DatabasePipeline:
+    def __init__(self):
+        # Cache for dimensions
+        self.crawl_id
+        self.cache = {
+            'crawl_id': None,
+            'domains': {},
+            'urls': {},
+            'content_hashes': {}
+        }
+
+    def open_spider(self, spider):
         self.connection = psycopg2.connect(database="crown_scraping", user="crown_scraping", password="xAK9q5IMnj1opUh3", host="192.168.1.10", port="5432")
         self.cursor = self.connection.cursor()
+
+        # Initialize a new crawl record and cache the crawl_id
+        self.cursor.execute("INSERT INTO dim_crawl_id (crawl_timestamp) VALUES (NOW()) RETURNING crawl_id;")
+        self.crawl_id = self.cursor.fetchone()[0]
 
     def close_spider(self, spider):
         self.connection.close()
 
+    def get_dim_domain(self, domain_name):
+        if domain_name in self.cache['domains']:
+            return self.cache['domains'][domain_name]
+
+        self.cursor.execute("SELECT domain_id FROM dim_domains WHERE domain_name = %s", (domain_name,))
+        result = self.cursor.fetchone()
+
+        if result is None:
+            self.cursor.execute("INSERT INTO dim_domains (domain_name) VALUES (%s) RETURNING domain_id;", (domain_name,))
+            domain_id = self.cursor.fetchone()[0]
+        else:
+            domain_id = result[0]
+
+        self.cache['domains'][domain_name] = domain_id
+        return domain_id
+
+    def get_dim_url(self, url):
+        if url in self.cache['urls']:
+            return self.cache['urls'][url]
+
+        self.cursor.execute("SELECT url_id FROM dim_urls WHERE url = %s", (url,))
+        result = self.cursor.fetchone()
+
+        if result is None:
+            domain_name = urlparse(url).netloc  # using urlparse for better handling of URLs
+            domain_id = self.get_dim_domain(domain_name)
+            self.cursor.execute("INSERT INTO dim_urls (url, domain_id) VALUES (%s, %s) RETURNING url_id;", (url, domain_id))
+            url_id = self.cursor.fetchone()[0]
+        else:
+            url_id = result[0]
+
+        self.cache['urls'][url] = url_id
+        return url_id
+
+    def get_dim_content(self, content_hash):
+        if content_hash in self.cache['content_hashes']:
+            return self.cache['content_hashes'][content_hash]
+
+        self.cursor.execute("SELECT content_id FROM dim_content WHERE content_hash = %s", (content_hash,))
+        result = self.cursor.fetchone()
+
+        if result is None:
+            self.cursor.execute("""
+                INSERT INTO dim_content (content_hash)
+                VALUES (%s) RETURNING content_id;
+            """, (content_hash,))
+            content_id = self.cursor.fetchone()[0]
+        else:
+            content_id = result[0]
+
+        self.cache['content_hashes'][content_hash] = content_id
+        return content_id
+
+    def create_dim_content(self, content_hash, raw_html_id, text_id, markdown_id):
+        content_id = self.get_dim_content(content_hash)
+
+        if raw_html_id is not None or text_id is not None or markdown_id is not None:
+            self.cursor.execute("""
+                UPDATE dim_content
+                SET raw_html_id = COALESCE(%s, raw_html_id),
+                    text_id = COALESCE(%s, text_id),
+                    markdown_id = COALESCE(%s, markdown_id)
+                WHERE content_id = %s;
+            """, (raw_html_id, text_id, markdown_id, content_id))
+
+        return content_id
+
+
     def process_item(self, item, spider):
-        if isinstance(item, PageItem):
-            # For PageItem, we just insert and skip if already set.
+        # DownloadsItem
+        if isinstance(item, DownloadItem):
+            domain_id = self.get_dim_domain(item['domain_name'])
+            url_id = self.get_dim_url(item['url'])
+            # Insert into fact_downloads
             self.cursor.execute("""
-                INSERT INTO page (pageId, domain, initial_date, initial_source_url) 
-                VALUES (%s, %s, %s, %s)
-                ON CONFLICT (pageId) DO NOTHING;
-            """, (item['pageId'], item['domain'], item['initial_date'], item['initial_source_url']))
-        
-        elif isinstance(item, UrlItem):
-            # For UrlItem, we update everything.
-            self.cursor.execute("""
-                INSERT INTO url (URL, return_code, mime, pageId, initial_referrer, date_updated, protocol, subdomain, domain, path, query, fragment) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (URL) DO UPDATE SET
-                    return_code = excluded.return_code,
-                    mime = excluded.mime,
-                    pageId = excluded.pageId,
-                    initial_referrer = excluded.initial_referrer,
-                    date_updated = excluded.date_updated,
-                    protocol = excluded.protocol,
-                    subdomain = excluded.subdomain,
-                    domain = excluded.domain,
-                    path = excluded.path,
-                    query = excluded.query,
-                    fragment = excluded.fragment;
-            """, (item['URL'], item['return_code'], item['mime'], item['pageId'], item['initial_referrer'], item['date_updated'], item['protocol'], item['subdomain'], item['domain'], item['path'], item['query'], item['fragment']))
-        
+                INSERT INTO fact_downloads (download_timestamp, http_status, headers, url_id, domain_id, crawl_id)
+                VALUES (%s, %s, %s, %s, %s, %s);
+            """, (item['download_timestamp'], item['http_status'], item['headers'], url_id, domain_id, self.crawl_id))
+
+        # ContentItem
+    # ContentItem
+        elif isinstance(item, ContentItem):
+            # Insert raw_html, text, and markdown data
+            self.cursor.execute("INSERT INTO dim_raw_html (raw_html_data) VALUES (%s) RETURNING raw_html_id;", (item['raw_html_data'],))
+            raw_html_id = self.cursor.fetchone()[0]
+
+            self.cursor.execute("INSERT INTO dim_text (text_data) VALUES (%s) RETURNING text_id;", (item['text_data'],))
+            text_id = self.cursor.fetchone()[0]
+
+            self.cursor.execute("INSERT INTO dim_markdown (markdown_data) VALUES (%s) RETURNING markdown_id;", (item['markdown_data'],))
+            markdown_id = self.cursor.fetchone()[0]
+
+            # Create or update dim_content
+            content_id = self.create_dim_content(item['content_hash'], raw_html_id, text_id, markdown_id)
+
+
+        # LinksItem
         elif isinstance(item, LinkItem):
-            # For LinkItem, we have a composite key (PageId, link_num) and update everything.
+            from_content_id = self.get_dim_content(item['from_content_hash'], None, None, None)
+            to_url_id = self.get_dim_url(item['to_url'])
+            # Insert into fact_links
             self.cursor.execute("""
-                INSERT INTO link (pageId, link_num, from_domain, from_url, to_domain, to_url) 
-                VALUES (%s, %s, %s, %s, %s, %s)
-                ON CONFLICT (pageId, link_num) DO UPDATE SET
-                    from_domain = excluded.from_domain,
-                    from_url = excluded.from_url,
-                    to_domain = excluded.to_domain,
-                    to_url = excluded.to_url;
-            """, (item['pageId'], item['link_num'], item['from_domain'], item['from_url'], item['to_domain'], item['to_url']))
-        
-        elif isinstance(item, TextItem):
-            # For TextItem, we update the content.
+                INSERT INTO fact_links (from_content_id, to_url_id, link_text, crawl_id)
+                VALUES (%s, %s, %s, %s);
+            """, (from_content_id, to_url_id, item['link_text'], self.crawl_id))
+
+        # HtmlContentBridgeItem
+        elif isinstance(item, HtmlContentItem):
+            page_content_id = self.get_dim_content(item['page_content_hash'], None, None, None)
+            fragment_content_id = self.get_dim_content(item['fragment_content_hash'], None, None, None)
+            # Insert into page_fragment_association
             self.cursor.execute("""
-                INSERT INTO text (pageId, text_version) 
-                VALUES (%s, %s)
-                ON CONFLICT (pageId) DO UPDATE SET
-                    text_version = excluded.text_version;
-            """, (item['pageId'], item['text_version']))
-        
-        elif isinstance(item, MarkdownItem):
-            # For MarkdownItem, we update the content.
-            self.cursor.execute("""
-                INSERT INTO markdown (pageId, markdown_version) 
-                VALUES (%s, %s)
-                ON CONFLICT (pageId) DO UPDATE SET
-                    markdown_version = excluded.markdown_version;
-            """, (item['pageId'], item['markdown_version']))
+                INSERT INTO page_fragment_association (page_content_id, fragment_content_id)
+                VALUES (%s, %s);
+            """, (page_content_id, fragment_content_id))
 
         self.connection.commit()
         return item

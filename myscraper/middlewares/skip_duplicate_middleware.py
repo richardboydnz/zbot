@@ -1,5 +1,5 @@
 import psycopg2
-from scrapy.exceptions import IgnoreRequest
+from scrapy.exceptions import IgnoreRequest # type: ignore
 
 
 class SkipDuplicateMiddleware:
