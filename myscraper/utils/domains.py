@@ -13,7 +13,7 @@ class DomainFactory:
 
     def get_domain_id(self, domain_name):
         domain_item = self.domains_cache.get(domain_name)
-        return domain_item.domain_id if domain_item else None
+        return domain_item['domain']_id if domain_item else None
 
     def update_domain_id(self, domain_name, domain_id):
         if domain_name in self.domains_cache:

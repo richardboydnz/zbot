@@ -1,46 +1,44 @@
 import datetime
 import hashlib
+
 from myscraper.items import ContentItem, CrawlItem, DomainItem, DownloadItem, HtmlContentItem, HtmlItem, LinkItem
 from urllib.parse import urlparse
-from scrapy.linkextractors import LinkExtractor # type: ignore
-from scrapy.spiders import CrawlSpider, Rule # type: ignore
-from scrapy import Request # type: ignore
+# from scrapy.linkextractors import LinkExtractor # type: ignore
+from scrapy.http import Request # type: ignore
+from scrapy.http import Response
 
-
-import logging
-
-import html2text
 
 import hashlib
 from bs4 import BeautifulSoup
-from myscraper.utils.parse_links import gen_css_links
-from ..utils.markdown import soup_to_markdown as md 
-from ..utils.util import hash64 
+from .cached_spider import CachedSpider
+from myscraper.utils.parse_links import Fragment_Parser
+from myscraper.utils.urls import URLCache
+from myscraper.utils.util import hash64, Hash64 
+from ..utils.fragments import get_fragments
 
 from itertools import chain
 
 flatten = chain.from_iterable
 
-# domain = 'ballet.zavidan.info'
-domain = 'www.graceremovals.co.nz'
+domain = 'ballet.zavidan.info'
+# domain = 'www.graceremovals.co.nz'
 
 
 
-class WebsiteSpider(CrawlSpider):
+class WebsiteSpider(CachedSpider):
     name = 'website_spider'
-    allowed_domains = ['example.com']
+    allowed_domains = [domain]
 
     start_urls = ['https://' + domain]  # Replace with the website you want to scrape
     # start_urls = start_urls
 
-    rules = (
-        Rule(LinkExtractor(allow_domains=[domain]), callback='parse_page', follow=True),
-    )
+    # rules = (
+    #     Rule(LinkExtractor(allow_domains=[domain]), callback='parse_page', follow=True),
+    # )
 
 
     def __init__(self):
         super().__init__()
-        self.cache = {}
 
     def start_requests(self):
 
@@ -57,121 +55,150 @@ class WebsiteSpider(CrawlSpider):
         )
 
         for url in self.start_urls:
-            yield Request(url, meta={'crawl_item': self.crawl_item, 'domain_item': self.domain_item})
+            yield Request(url, callback=self.parse_item)
 
-    def parse_item(self, response):
+    def parse_item(self, response: Response):
         # This function gets the HTML item, yields the HtmlItem,
         # and passes the html_hash to the gen_downloadItem function
         html_item = self.create_html_item(response)
         yield html_item
-        yield from self.gen_downloadItem(response, html_item)
-
-        content_fragments = self.find_content_fragments(response.body)
-        yield from flatten(self.gen_content_item(fragment, html_item) 
-                           for fragment in content_fragments)
+        yield self.create_downloadItem(response, html_item)
 
 
-    def create_html_item(self, response):
+
+        for fragment, _ in get_fragments(response.text):
+            # Creating a new HtmlResponse object for each fragment
+            # Directly calling the callback method
+            content_type = fragment.name
+            yield Request(
+                url=response.url,
+                method='HTML',
+                callback=self.parse_fragment,
+                meta={'fragment': str(fragment)},  #.encode('utf-8')},
+                cb_kwargs={'html_hash': html_item['html_hash'],
+                           'orig_response': response,
+                           'content_type': content_type}
+            )
+            # yield from self.parse_fragment(fragment)
+
+        # fragments = self.find_fragments(response.text)
+        # for fragment in fragments:
+        #     yield Request(
+        #         url=response.url, # Ensures nothing new is downloaded
+        #         callback=self.parse_fragment,
+        #         cb_kwargs={'fragment': fragment},
+        #         dont_filter=True  # Ensures the request is not filtered
+        #     )
+
+    def parse_fragment(self, response, **kwargs):
+        parser = Fragment_Parser(self, response, **kwargs)
+        yield from parser.parse_fragment()
+        # fragment = response.text
+        # content_item = self.create_content_item(response, html_hash, content_type)
+        # content_hash = content_item['fragment_hash']
+
+        # yield content_item        
+
+        # association_item = HtmlContentItem()
+        # association_item['html_hash'] = html_hash
+        # association_item['content_hash'] = content_hash
+        # yield association_item
+
+        # yield from self.gen_links(response, content_item)
+
+        # # for link in self.find_links(fragment):
+        # #     yield from self.create_link_item(link, content_item) 
+
+
+    def gen_fragments(self, html):
+        for fragment in get_fragments(html):
+            yield fragment
+
+    def create_html_item(self, response:Response):
         # This method creates an HtmlItem
         html_data = response.text
-        html_hash = int(hashlib.sha256(html_data.encode('utf-8')).hexdigest(), 16) % 10**8
+        html_hash = hash64(html_data)
         return HtmlItem(
-            domain=response.url.split('/')[2],
-            domain_id=None,  # This should be set according to your domain logic
+            domain=self.url_cache.get_url_item(response.url)['domain'],
             html_hash=html_hash,
             html_data=html_data
         )
 
-    def gen_downloadItem(self, response, html_item:HtmlItem):
+    def create_downloadItem(self, response, html_item:HtmlItem) -> DownloadItem:
         # This method yields a DownloadItem
         headers = str(response.headers)
-        yield DownloadItem(
-            domain=html_item.domain,
+        return DownloadItem(
+            domain=html_item['domain'],
             url=response.url,
-            html_hash=html_item.html_hash,
+            html_hash=html_item['html_hash'],
             download_timestamp=datetime.datetime.now().isoformat(),
             http_status=response.status,
             headers=headers,
             crawl_id=None  # This should be set according to your crawl logic
         )
 
-    def find_content_fragments(self, content):
+    def find_fragments(self, content):
         # Placeholder: Your logic to split content into fragments
         return [content[i:i+1000] for i in range(0, len(content), 1000)]
 
-    def gen_content_item(self, fragment, html_item:HtmlItem):
-
-        content_text = md(fragment)
-        plain_text = md(fragment)
-
-        content_hash = hash64(content_text)
-        plain_hash = hash64(plain_text)
-
-        # Check if this content has already been processed
-        if content_hash in self.cache.contentItem:
-            return
-        
-        content_item = ContentItem()
-
-        yield content_item
-
-        association_item = HtmlContentItem()
-        association_item['html_hash'] = html_item.html_hash
-        association_item['content_hash'] = content_hash
-        yield association_item
-
-        # Flatten nested iterators for link items
-        link_items = (self.create_link_item(link, content_item) 
-                      for link in self.find_links(fragment))
-        yield from flatten(link_items)
 
 
-    def gen_links(self, soup, content_item):
-        # Process href tags for navigable links
-        for tag in soup.find_all(href=True):
-            url_item = self.url_cache.get_url_item(tag['href'], content_item.domain)
-            link_item = LinkItem(
-                domain=url_item.domain,
-                from_content_hash=content_item.content_hash,
-                to_url=tag['href'],
-                link_text=tag.get_text(),
-                link_attr='href',
-                link_tag=tag.name,
-                internal=url_item.domain == content_item.domain,
-            )
-            yield link_item
+    # def gen_links(self, response: Response, content_item: ContentItem):
+    #     soup = BeautifulSoup(content_item['fragment_text'])
+    #     # Process href tags for navigable links
+    #     for tag in soup.find_all(href=True):
+    #         url = response.urljoin( tag['href'] )
+    #         url_item = self.url_cache.get_url_item(url)
+    #         link_item = LinkItem(
+    #             domain=url_item['domain'],
+    #             fragment_hash=content_item['content_hash'],
+    #             to_url=url,
+    #             link_text=tag.get_text(),
+    #             link_attr='href',
+    #             link_tag=tag.name,
+    #             is_internal=url_item['domain'] == content_item['domain'],
+    #         )
+    #         yield link_item
+    #         # print( 'from: ', content_item['domain'], ' to: ', url_item['domain'] , ' ===================================')
+    #         if link_item['is_internal']:
+    #             yield Request(url=url, method='GET')  # GET request for external resources
+    #         else:
+    #             yield Request(url=url, method='HEAD')  # HEAD request for external resources
 
-        # Process src tags for resources
-        for tag in soup.find_all(src=True):
-            url_item = self.url_cache.get_url_item(tag['src'], content_item.domain)
-            link_item = LinkItem(
-                domain=url_item.domain,
-                from_content_hash=content_item.content_hash,
-                to_url=tag['src'],
-                link_text='',  # src tags often don't have text; could use alt attribute for images
-                link_attr='src',
-                link_tag=tag.name,
-                internal=url_item.domain == content_item.domain,
-            )
-            yield link_item
-            if not link_item.internal:
-                yield Request(url=tag['src'], method='HEAD')  # HEAD request for external resources
 
-    def parse_css_file(self, response, content_item):
-        css_content = response.text
-        for link_item in gen_css_links(css_content, content_item):
-            yield link_item
+
+    #     # Process src tags for resources
+    #     for tag in soup.find_all(src=True):
+    #         url = response.urljoin( tag['src'] )
+    #         url_item = self.url_cache.get_url_item(url)
+    #         link_item = LinkItem(
+    #             domain=url_item['domain'],
+    #             fragment_hash=content_item['content_hash'],
+    #             to_url=url,
+    #             link_text='',  # src tags often don't have text; could use alt attribute for images
+    #             link_attr='src',
+    #             link_tag=tag.name,
+    #             is_internal=url_item['domain'] == content_item['domain'],
+    #         )
+    #         yield link_item
+    #         yield Request(url=url, method='HEAD')  # query existance of all linked resources
+
+    # def parse_css_file(self, response, content_item):
+    #     css_content = response.text
+    #     for link_item in gen_css_links(css_content, content_item):
+    #         yield link_item
 
     def gen_requests(self, item_generator):
         parse_callbacks = {'webpage': self.parse_html_file, 'style': self.parse_css_file}
 
         for item in item_generator:
-            if item['link_type'] in parse_callbacks and item['domain'] in self.allowed_domains:
-                # Create a full download and parse request
-                yield Request(item['to_url'], callback=parse_callbacks[item['link_type']])
-            else:
-                # Create a HEAD request for existence check
-                yield Request(item['to_url'], method='HEAD', callback=self.check_existence)
+            if isinstance(item, LinkItem):
+                if item['link_type'] in parse_callbacks and item['domain'] in self.domain:
+                    # Create a full download and parse request
+                    yield Request(item['to_url'], callback=parse_callbacks[item['link_type']])
+                else:
+                    # Create a HEAD request for existence check
+                    yield Request(item['to_url'], method='HEAD', callback=self.check_existence)
             # Pass through all items
             yield item
 
@@ -182,21 +209,21 @@ class WebsiteSpider(CrawlSpider):
     def parse(self, response):
         # ... initial parsing logic ...
 
-        soup = BeautifulSoup(response.body, 'html.parser')
+        soup = BeautifulSoup(response.text, 'html.parser')
 
 
         # Yield a DownloadItem first
         download_item = self.create_download_item(response, soup)
 
         # Flatten nested iterators for content items
-        content_fragments = self.find_content_fragments(response.body)
+        content_fragments = self.find_fragments(response.text)
         yield from flatten(self.create_content_item(fragment, download_item) 
                            for fragment in content_fragments)
 
     def create_download_item(self, response, soup):
         download_item = DownloadItem()
         download_item['url'] = response.url
-        download_item['content'] = response.body
+        download_item['content'] = response.text
         yield download_item
         
 
@@ -204,7 +231,7 @@ class WebsiteSpider(CrawlSpider):
 
         link_item = LinkItem()
         link_item['link_id'] = hashlib.sha256(link['href'].encode('utf-8')).hexdigest()
-        link_item['from_content'] = content_item.content_id
+        link_item['from_content'] = content_item['content_id']
         link_item['to_url'] = link['href']
         link_item['link_text'] = link.get_text(strip=True)
         link_item['crawl_timestamp'] = datetime.utcnow().isoformat()

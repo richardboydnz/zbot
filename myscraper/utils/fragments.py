@@ -1,11 +1,15 @@
 # from path import element_path
 
-from bs4 import BeautifulSoup  
+from bs4 import BeautifulSoup, Tag  
+from typing import List, Tuple, TypeAlias
+from bs4 import BeautifulSoup  # Assuming you're using BeautifulSoup
 
-from .markdown import soup_to_markdown as md  
+from .markdown import soup_to_markdown as md_soup  
 
-def element_path(element):
-    path = []
+Path: TypeAlias = List[Tuple[str, int]]
+
+def element_path(element: Tag|None)-> Path:
+    path: Path = []
     while element is not None and element.name is not None:
         parent = element.parent
         if parent is not None:
@@ -18,8 +22,8 @@ def element_path(element):
     
     return path
 
-def find_fragments(html_content):
-    soup = BeautifulSoup(html_content, 'html.parser')
+def find_fragments(html_content:str)-> list[Tag]:
+    soup: Tag = BeautifulSoup(html_content, 'html.parser')
     fragments = [soup]
     
     # Define the tags to look for
@@ -32,7 +36,7 @@ def find_fragments(html_content):
     return fragments
 
 
-def sort_fragments(fragments):
+def sort_fragments(fragments: list[Tag])-> list[tuple[Tag, Path]]:
     # Get the path for each fragment
     sorted_fragments = [(frag, element_path(frag)) for frag in fragments]
     # Sort the fragments based on the length of their path (depth in the DOM) and the path itself
@@ -70,13 +74,12 @@ def extract_fragments( sorted_fragments):
 
     return extracted_fragments
 
-def get_content_segments(html_content):
-    soup = BeautifulSoup(html_content, 'html.parser')
+def get_fragments(html_content: str) -> List[Tuple[Tag, Path ]]:
     fragments = find_fragments(html_content)
     sorted_fragments = sort_fragments(fragments)
     extracted_fragments = extract_fragments( sorted_fragments)
-    canonical_frags = [ (frag,path, md(frag)) for (frag, path) in extracted_fragments ]
-    return canonical_frags
+    # canonical_frags = [ (frag,path, md(frag)) for (frag, path) in extracted_fragments ]
+    return extracted_fragments
 
 
 # def get_fragments(html_content):
@@ -134,7 +137,7 @@ if __name__ == "__main__":
         fragments = find_fragments(test_html_content)
         sorted_fragments = sort_fragments(fragments)
         extracted_fragments = extract_fragments( sorted_fragments)
-        canonical_frags = [ (frag,path, md(frag)) for (frag, path) in extracted_fragments ]
+        canonical_frags = [ (frag,path, md_soup(frag)) for (frag, path) in extracted_fragments ]
 
         # print(f"Remaining content: {remaining_content}")
         print(f"Extracted fragments: {canonical_frags}")

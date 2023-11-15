@@ -1,7 +1,7 @@
 # utils/markdown.py
 
 from markdownify import MarkdownConverter # type: ignore
-from bs4 import BeautifulSoup # type: ignore
+from bs4 import BeautifulSoup, Tag # type: ignore
 from typing import Optional
 
 import re
@@ -14,7 +14,11 @@ class NoLinkMarkdownConverter(StandardMarkdownConverter):
     def convert_a(self, el, text: str, convert_as_inline: bool) -> str:
         return text
     
-def soup_to_markdown(soup: BeautifulSoup, links: bool = True, **options) -> str:
+def markdown(text: str, links: bool = True, **options) -> str:
+    soup = BeautifulSoup(text)
+    return soup_to_markdown(soup)
+
+def soup_to_markdown(soup: BeautifulSoup|Tag, links: bool = True, **options) -> str:
     """
     Converts BeautifulSoup fragment to markdown.
     If no_links is True, links will not be included in the markdown output.

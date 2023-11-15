@@ -25,6 +25,11 @@ NEWSPIDER_MODULE = "myscraper.spiders"
 ITEM_PIPELINES = {
    'myscraper.pipelines.DatabasePipeline': 300,
 }
+
+DOWNLOADER_MIDDLEWARES = {
+    'myscraper.middlewares.html_response': 500,  # Adjust the path and priority as needed
+}
+
 # DOWNLOADER_MIDDLEWARES = {
 #     'myscraper.middlewares.skip_duplicate_middleware.SkipDuplicateMiddleware': 100,
 #     # ... other middlewares ...

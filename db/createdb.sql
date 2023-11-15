@@ -73,7 +73,7 @@ CREATE TABLE download_fact (
 -- Links Fact Table
 CREATE TABLE link_fact (
     link_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    from_content_id INTEGER REFERENCES content_dim(content_id),
+    fragment_id INTEGER REFERENCES content_dim(content_id),
     to_url_id INTEGER REFERENCES url_dim(url_id),
     link_text TEXT,
     crawl_id INTEGER REFERENCES crawl_dim(crawl_id),

@@ -5,7 +5,7 @@ class URLCache:
     def __init__(self):
         self.urls_cache = {}  # Cache to store URLItem objects
 
-    def get_url_item(self, url:str):
+    def get_url_item(self, url:str) -> UrlItem:
         # Check if URL is already in cache
         if url in self.urls_cache:
             return self.urls_cache[url]
@@ -24,7 +24,7 @@ class URLCache:
 
         # Determine if it is a resource or navigable
         is_resource = file_extension != '' and file_extension not in ['html', 'htm', 'php', 'asp', 'aspx', 'jsp']
-        is_navigable = not is_resource
+        is_webpage = not is_resource
 
         # Create a new URLItem
         url_item = UrlItem(
@@ -33,7 +33,7 @@ class URLCache:
             domain=domain,
             path=path,
             is_resource=is_resource,
-            is_navigable=is_navigable,
+            is_webpage=is_webpage,
             resource_type='',  # This would be determined later
             last_status_code=0,  # This would be updated later
             file_extension=file_extension
@@ -46,7 +46,7 @@ class URLCache:
     
     def get_url_id(self, url_name: str):
         url_item = self.urls_cache.get(url_name)
-        return url_item.url_id if url_item else None
+        return url_item['url_id'] if url_item else None
 
     def update_url_id(self, url_name: str, url_id: int):
         if url_name in self.urls_cache:

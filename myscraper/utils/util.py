@@ -1,4 +1,4 @@
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, NewType
 from itertools import chain
 
 import hashlib
@@ -7,6 +7,8 @@ import ctypes
 # The flatten function takes an Iterable of Iterables and chains them into a single Iterator.
 def flatten(iterable: Iterable[Iterable]) -> Iterator:
     return chain.from_iterable(iterable)
+
+Hash64 = NewType('Hash64', int)
 
 # The hash64 function takes a string and returns a 64-bit signed integer.
 def hash64(s: str) -> int:
