@@ -4,9 +4,9 @@ from scrapy.http import HtmlResponse
 
 from myscraper.items import ContentItem, HtmlContentItem, HtmlItem, DownloadItem
 from myscraper.spiders.website_spider import WebsiteSpider
-from myscraper.utils.util import hash64
+from myscraper.encode.hash import hash64
 from .example import example_html
-from myscraper.utils.fragments import get_fragments  
+from myscraper.parsers.fragments import get_fragments  
 
 import pytest
 from bs4 import BeautifulSoup

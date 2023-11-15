@@ -1,17 +1,14 @@
-from ..items import UrlItem
+from myscraper.items.item_cache import ItemCache
+from . import UrlItem
 from urllib.parse import urlparse
 
-class URLCache:
-    def __init__(self):
-        self.urls_cache = {}  # Cache to store URLItem objects
+class URLCache(ItemCache):
+    # def __init__(self):
+    #     self.cache = {}  # Cache to store URLItem objects
 
-    def get_url_item(self, url:str) -> UrlItem:
-        # Check if URL is already in cache
-        if url in self.urls_cache:
-            return self.urls_cache[url]
-
+    def _make_item(self, key:str):
         # Parse the URL
-        parsed_url = urlparse(url)
+        parsed_url = urlparse(key)
         protocol = parsed_url.scheme
         domain = parsed_url.netloc
         path = parsed_url.path
@@ -27,8 +24,8 @@ class URLCache:
         is_webpage = not is_resource
 
         # Create a new URLItem
-        url_item = UrlItem(
-            url=url,
+        return UrlItem(
+            url=key,
             protocol=protocol,
             domain=domain,
             path=path,
@@ -39,22 +36,24 @@ class URLCache:
             file_extension=file_extension
         )
 
-        # Store in cache
-        self.urls_cache[url] = url_item
+    # def get_item(self, key:str) -> UrlItem:
+    #     # Check if URL is already in cache
+    #     if key not in self.cache:
+    #         self.cache[key] = self._make_item(key)
 
-        return url_item
+    #     return self.cache[key]
     
-    def get_url_id(self, url_name: str):
-        url_item = self.urls_cache.get(url_name)
-        return url_item['url_id'] if url_item else None
+    # def get_id(self, url_name: str):
+    #     url_item = self.cache.get(url_name)
+    #     return url_item['url_id'] if url_item else None
 
-    def update_url_id(self, url_name: str, url_id: int):
-        if url_name in self.urls_cache:
-            self.urls_cache[url_name].url_id = url_id
+    # def update_id(self, url_name: str, url_id: int):
+    #     if url_name in self.cache:
+    #         self.cache[url_name].url_id = url_id
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    # Example usage:
-    url_cache = URLCache()
-    url_item = url_cache.get_url_item('http://www.example.com/page.html')
+#     # Example usage:
+#     url_cache = URLCache()
+#     url_item = url_cache.get_item('http://www.example.com/page.html')

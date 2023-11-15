@@ -4,11 +4,11 @@ from scrapy.http import Request, Response # type: ignore
 from myscraper.items import ContentItem, CrawlItem, DomainItem, DownloadItem, HtmlContentItem, HtmlItem, LinkItem
 from myscraper.spiders.cached_spider import CachedSpider
 
-from myscraper.utils.util import Hash64
+from myscraper.encode.hash import Hash64
 from scrapy.http import HtmlResponse 
 from ..items import LinkItem
-from .markdown import soup_to_markdown as md_soup, markdown 
-from myscraper.utils.util import hash64, Hash64 
+from ..encode.markdown import soup_to_markdown as md_soup, markdown 
+from myscraper.encode.hash import hash64, Hash64 
 from myscraper.spiders.cached_spider import CachedSpider
 
 url_patterns = [
@@ -35,11 +35,11 @@ url_patterns = [
 class Fragment_Parser:
 
     def __init__(self, spider:CachedSpider, response: HtmlResponse, html_hash: Hash64, content_type='html', **kwargs) -> None:
-        self.url_cache = spider.url_cache
+        self.url_cache = spider.urls
         self.html_hash = html_hash
         self.response = response
         self.url = response.url
-        url_item = self.url_cache.get_url_item(self.url)
+        url_item = self.url_cache.get_item(self.url)
         self.domain = url_item['domain']
         self.content_type = content_type
         self.fragment_text: str = response.text
@@ -68,7 +68,7 @@ class Fragment_Parser:
         plain_text = markdown(fragment_text, links=False)
 
         return ContentItem(
-            domain=self.url_cache.get_url_item(self.response.url)['domain'],
+            domain=self.url_cache.get_item(self.response.url)['domain'],
             fragment_text= fragment_text,
             fragment_hash=hash64(fragment_text),
             content_text=content_text,
@@ -124,7 +124,7 @@ class Fragment_Parser:
 
     def create_link_from_attr(self, bs_tag:BeautifulSoup, attr:str, link_type:str):
         to_url = self.response.urljoin( bs_tag[attr] )
-        to_url_item = self.url_cache.get_url_item(to_url)
+        to_url_item = self.url_cache.get_item(to_url)
 
         return LinkItem(
             domain=self.domain,

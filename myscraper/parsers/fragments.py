@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup, Tag
 from typing import List, Tuple, TypeAlias
 from bs4 import BeautifulSoup  # Assuming you're using BeautifulSoup
 
-from .markdown import soup_to_markdown as md_soup  
+from ..encode.markdown import soup_to_markdown as md_soup  
 
 Path: TypeAlias = List[Tuple[str, int]]
 
@@ -109,39 +109,39 @@ def get_fragments(html_content: str) -> List[Tuple[Tag, Path ]]:
 # print("Remaining Content:")
 # print(remaining_content)
 # print("\nExtracted Fragments:")
-# for fragment in extracted_fragments:
+# for fragment in extracted_fragments:`
 #     print(str(fragment), "\n")
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-        # Test HTML content
-    from .html_snippets import test_html_content 
-    # Assuming find_fragments function is defined as above
-    def test_find_fragments():
-        fragments = find_fragments(test_html_content)
-        print(f"Found fragments: {fragments}")
-        # assert len(fragments) > 0, "Should find at least one fragment"
-
-
-    # Assuming sort_fragments function is defined as above
-    def test_sort_fragments():
-        fragments = find_fragments(test_html_content)
-        sorted_fragments = sort_fragments(fragments)
-        print(f"Sorted fragments: {sorted_fragments}")
-        # assert sorted_fragments, "Should return a non-empty list"
+#         # Test HTML content
+#     from ..encode.html_snippets import test_html_content 
+#     # Assuming find_fragments function is defined as above
+#     def test_find_fragments():
+#         fragments = find_fragments(test_html_content)
+#         print(f"Found fragments: {fragments}")
+#         # assert len(fragments) > 0, "Should find at least one fragment"
 
 
-    # Assuming extract_fragments function is defined as above
-    def test_extract_fragments():
-        soup = BeautifulSoup(test_html_content, 'html.parser')
-        fragments = find_fragments(test_html_content)
-        sorted_fragments = sort_fragments(fragments)
-        extracted_fragments = extract_fragments( sorted_fragments)
-        canonical_frags = [ (frag,path, md_soup(frag)) for (frag, path) in extracted_fragments ]
+#     # Assuming sort_fragments function is defined as above
+#     def test_sort_fragments():
+#         fragments = find_fragments(test_html_content)
+#         sorted_fragments = sort_fragments(fragments)
+#         print(f"Sorted fragments: {sorted_fragments}")
+#         # assert sorted_fragments, "Should return a non-empty list"
 
-        # print(f"Remaining content: {remaining_content}")
-        print(f"Extracted fragments: {canonical_frags}")
-        # assert extracted_fragments, "Should have extracted fragments"
-        # assert remaining_content, "Should have remaining content"
 
-    test_extract_fragments()
+#     # Assuming extract_fragments function is defined as above
+#     def test_extract_fragments():
+#         soup = BeautifulSoup(test_html_content, 'html.parser')
+#         fragments = find_fragments(test_html_content)
+#         sorted_fragments = sort_fragments(fragments)
+#         extracted_fragments = extract_fragments( sorted_fragments)
+#         canonical_frags = [ (frag,path, md_soup(frag)) for (frag, path) in extracted_fragments ]
+
+#         # print(f"Remaining content: {remaining_content}")
+#         print(f"Extracted fragments: {canonical_frags}")
+#         # assert extracted_fragments, "Should have extracted fragments"
+#         # assert remaining_content, "Should have remaining content"
+
+#     test_extract_fragments()

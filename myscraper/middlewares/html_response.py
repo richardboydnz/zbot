@@ -1,4 +1,4 @@
-from scrapy.http import HtmlResponse
+from scrapy.http import HtmlResponse # type: ignore
 
 class CustomMiddleware:
     def process_request(self, request, spider):

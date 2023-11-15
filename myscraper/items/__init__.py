@@ -1,7 +1,7 @@
 from scrapy.item import Item, Field  # type: ignore
 from typing import Optional
 
-from myscraper.utils.util import Hash64 
+from myscraper.encode.hash import Hash64 
 
 class CrawlItem(Item):
     crawl_id = Field()
