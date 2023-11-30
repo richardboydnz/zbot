@@ -6,7 +6,7 @@ from myscraper.items import ContentItem, HtmlContentItem, HtmlItem, DownloadItem
 from myscraper.spiders.website_spider import WebsiteSpider
 from myscraper.encode.hash import hash64
 from .example import example_html
-from myscraper.parsers.fragments import get_fragments  
+# from myscraper.parsers.fragment_parser import Fragment_Parser  
 
 import pytest
 from bs4 import BeautifulSoup

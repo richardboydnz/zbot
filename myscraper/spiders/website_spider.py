@@ -11,10 +11,10 @@ from scrapy.http import Response
 import hashlib
 from bs4 import BeautifulSoup
 from .cached_spider import CachedSpider
-from myscraper.parsers.parse_links import Fragment_Parser
+from myscraper.parsers.fragment_parser import Fragment_Parser
 from myscraper.items.urls import URLCache
 from myscraper.encode.hash import hash64, Hash64 
-from ..parsers.fragments import get_fragments
+from ..parsers.html_parser import get_fragments
 
 from itertools import chain
 
@@ -119,7 +119,7 @@ class WebsiteSpider(CachedSpider):
         html_data = response.text
         html_hash = hash64(html_data)
         return HtmlItem(
-            domain=self.urls.get_item(response.url)['domain'],
+            domain=self.urls.fetch_item(response.url)['domain'],
             html_hash=html_hash,
             html_data=html_data
         )

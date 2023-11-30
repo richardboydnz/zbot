@@ -1,6 +1,8 @@
 from scrapy.http import HtmlResponse # type: ignore
 
-class CustomMiddleware:
+class CustomMiddleware: 
+    # connect to db, look for fragment in db - do not process if exists.
+    # use db cache - populate hash - id for dependants
     def process_request(self, request, spider):
         if request.method == 'HTML':
             fragment = request.meta['fragment']

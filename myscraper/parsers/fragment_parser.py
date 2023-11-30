@@ -39,7 +39,7 @@ class Fragment_Parser:
         self.html_hash = html_hash
         self.response = response
         self.url = response.url
-        url_item = self.url_cache.get_item(self.url)
+        url_item = self.url_cache.fetch_item(self.url)
         self.domain = url_item['domain']
         self.content_type = content_type
         self.fragment_text: str = response.text
@@ -68,7 +68,7 @@ class Fragment_Parser:
         plain_text = markdown(fragment_text, links=False)
 
         return ContentItem(
-            domain=self.url_cache.get_item(self.response.url)['domain'],
+            domain=self.url_cache.fetch_item(self.response.url)['domain'],
             fragment_text= fragment_text,
             fragment_hash=hash64(fragment_text),
             content_text=content_text,
@@ -124,7 +124,7 @@ class Fragment_Parser:
 
     def create_link_from_attr(self, bs_tag:BeautifulSoup, attr:str, link_type:str):
         to_url = self.response.urljoin( bs_tag[attr] )
-        to_url_item = self.url_cache.get_item(to_url)
+        to_url_item = self.url_cache.fetch_item(to_url)
 
         return LinkItem(
             domain=self.domain,

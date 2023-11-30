@@ -16,7 +16,7 @@ def hash64(s: str) -> int:
     hash_object = hashlib.sha256(s.encode('utf-8'))
     
     # Convert the hex digest to a 64-bit integer using int and modulo to fit in 64 bits
-    hash_int = int(hash_object.hexdigest(), 16) % 2**64
+    hash_int = int(hash_object.hexdigest(), 16) % 2**63
     
     # Convert the 64-bit unsigned integer to a signed integer
     hash_signed = ctypes.c_int64(hash_int).value
