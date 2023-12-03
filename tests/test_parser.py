@@ -1,8 +1,10 @@
 import pytest
 from scrapy.http import Request # type: ignore
 from scrapy.http import HtmlResponse
+from myscraper.db.init_db import get_db
 
 from myscraper.items import ContentItem, HtmlContentItem, HtmlItem, DownloadItem
+from myscraper.settings import DB_SETTINGS
 from myscraper.spiders.website_spider import WebsiteSpider
 from myscraper.encode.hash import hash64
 from .example import example_html
@@ -40,12 +42,17 @@ def test_html_roundtrip():
     # Assert that the extracted footer matches the expected footer
     assert extracted_footer == expected_footer
 
+def test_db():
+    db_settings = DB_SETTINGS
+    db = get_db(db_settings)
+
+
 def test_parse_item():
     # Create a fake response object
     url = 'http://example.com'
     response = HtmlResponse(url=url, body=example_html, encoding='utf-8')
     # Instantiate the spider and call find_fragments
-    spider = WebsiteSpider()
+    spider = WebsiteSpider(domain_name='example.com')
 
     items = spider.parse_item(response)
 

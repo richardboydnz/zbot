@@ -12,22 +12,23 @@ BOT_NAME = "myscraper"
 LOG_LEVEL = 'INFO'
 
 DB_SETTINGS = {
-    'dbname': 'crown_scraping',
+    'database': 'crown_scraping',
     'user': 'crown_scraping',
     'password': 'xAK9q5IMnj1opUh3',
     'host': '192.168.1.10',
     'port': '5432'
 }
 
+
 SPIDER_MODULES = ["myscraper.spiders"]
 NEWSPIDER_MODULE = "myscraper.spiders"
 
 ITEM_PIPELINES = {
-   'myscraper.pipelines.DatabasePipeline': 300,
+   'myscraper.pipelines.downloads_pipe.DownloadsPipe': 300,
 }
 
 DOWNLOADER_MIDDLEWARES = {
-    'myscraper.middlewares.html_response': 500,  # Adjust the path and priority as needed
+    'myscraper.middlewares.html_response.HandleHtmlFragmentRequest': 10,  # Adjust the path and priority as needed
 }
 
 # DOWNLOADER_MIDDLEWARES = {
@@ -126,7 +127,7 @@ AUTOTHROTTLE_MAX_DELAY = 60  # Maximum delay (in seconds) between requests.
 DOWNLOAD_DELAY = 3  # Delay (in seconds) between consecutive requests.
 
 # Limit the number of concurrent requests.
-CONCURRENT_REQUESTS = 2
+CONCURRENT_REQUESTS = 3
 
 # Disable cookies as some sites might track requests using cookies.
 COOKIES_ENABLED = False

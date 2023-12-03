@@ -14,18 +14,19 @@ class ItemCache:
     def update_item(self, cachedItem: Item, newItem: Item):
         pass
 
-    def store_item(self, item: Item):
+    def store_item(self, item: Item) -> Item:
         key = item[self.key_field]
-        cachedItem = self.fetch_item(key)
+        cachedItem = ItemCache.fetch_item(self, key)
         if cachedItem is not None:
             self.update_item(cachedItem, item)
         else:
             self.cache[key] = item
+        return item
 
 class SingletonCache(ItemCache):
-    def __init__(self, key_field: str, create_singleton_func: Callable[[str], Optional[Item]]):
+    def __init__(self, key_field: str, backup_fetch_func: Callable[[str], Optional[Item]]):
         super().__init__(key_field)
-        self._create_singleton = create_singleton_func
+        self.__backup_fetch = backup_fetch_func
 
     def fetch_item(self, key: str) -> Item:
         # Check if item is already in cache
@@ -33,6 +34,10 @@ class SingletonCache(ItemCache):
         if item:
             return item
 
-        item = self._create_singleton(key)
+        item = self.__backup_fetch(key)
         self.store_item(item)
         return item
+
+    def __call__(self, key: str) -> Optional[Item]:
+        return self.fetch_item(key)
+# _backup_fetch

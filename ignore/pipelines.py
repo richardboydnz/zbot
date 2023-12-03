@@ -137,12 +137,12 @@ class DatabasePipeline:
         # LinksItem
         elif isinstance(item, LinkItem):
             fragment_id = self.get_dim_content(item['fragment_hash'], None, None, None)
-            to_url_id = self.get_dim_url(item['to_url'])
+            target_url_id = self.get_dim_url(item['target_url'])
             # Insert into fact_links
             self.cursor.execute("""
-                INSERT INTO fact_links (fragment_id, to_url_id, link_text, crawl_id)
+                INSERT INTO fact_links (fragment_id, target_url_id, link_text, crawl_id)
                 VALUES (%s, %s, %s, %s);
-            """, (fragment_id, to_url_id, item['link_text'], self.crawl_id))
+            """, (fragment_id, target_url_id, item['link_text'], self.crawl_id))
 
         # HtmlContentBridgeItem
         elif isinstance(item, HtmlContentItem):
