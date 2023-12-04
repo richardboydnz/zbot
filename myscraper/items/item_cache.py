@@ -16,28 +16,49 @@ class ItemCache:
 
     def store_item(self, item: Item) -> Item:
         key = item[self.key_field]
-        cachedItem = ItemCache.fetch_item(self, key)
-        if cachedItem is not None:
-            self.update_item(cachedItem, item)
+        cached_item = ItemCache.fetch_item(self,key)
+        if cached_item is not None:
+            self.update_item(cached_item, item)
         else:
             self.cache[key] = item
         return item
 
-class SingletonCache(ItemCache):
-    def __init__(self, key_field: str, backup_fetch_func: Callable[[str], Optional[Item]]):
+class GeneratorCache(ItemCache):
+    def __init__(self, key_field: str, backup_fetch_func: Optional[Callable[[str], Optional[Item]]] = None):
         super().__init__(key_field)
         self.__backup_fetch = backup_fetch_func
 
-    def fetch_item(self, key: str) -> Item:
+    def generate(self, key: str) -> Item:
+        if self.__backup_fetch is not None:
+            return self.__backup_fetch(key)
+        return None
+    
+    def gen_item(self, key: str) -> Item:
         # Check if item is already in cache
-        item = super().fetch_item(key)
+        item = self.fetch_item(key)
         if item:
             return item
 
-        item = self.__backup_fetch(key)
-        self.store_item(item)
-        return item
+        item = self.generate(key)
+        stored_item = self.store_item(item)
+        return stored_item
 
     def __call__(self, key: str) -> Optional[Item]:
-        return self.fetch_item(key)
+        return self.gen_item(key)
+    
 # _backup_fetch
+
+# Cache Fetch
+# look at cache
+# 
+# Cache Store
+# fetch from cache
+# if empty store
+# 
+
+# SingletonCache
+# fetch
+# if empty 
+#   generate
+#   store result in cache
+# 

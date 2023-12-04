@@ -1,14 +1,14 @@
 
 from scrapy import Item
-from myscraper.db.db_cache import DBSingletonCache
+from myscraper.db.db_cache import DbGeneratorCache
 
 from myscraper.items import UrlItem
-from myscraper.items.url_item import make_url, url_db_mapping, U
+from myscraper.items.url_item import make_url, url_db_mapping
 
 from ..items import UrlCache
 from ..db import init_db # type: ignore
 
-from ..items import DownloadItem, HtmlItem, CrawlItem
+from ..items import DownloadItem, HtmlItem, CrawlItem, get_class
 from ..items import DomainDBCache, UrlDBCache, HtmlDBCache, DownloadDBStore, CrawlDBStore
 
 # from myscraper.db.db_store import SimpleDbStore, DBMapping
@@ -21,7 +21,7 @@ class UrlPipe:
         # Initialize the pipeline with the database connection
         self.db = db
         self.domains = DomainDBCache(self.db)
-        self.url_cache = DBSingletonCache(db, url_db_mapping, self.make_db_url_item)
+        self.url_cache = DbGeneratorCache(db, url_db_mapping, self.make_db_url_item)
         self.urls = UrlDBCache(self.db)
         self.domain_name = ""
         self.domain_id = 0
@@ -33,7 +33,6 @@ class UrlPipe:
 
         # Create the database connection using settings
         db = init_db.get_db(db_settings)  # Modify the get_db method to accept settings
-        init_db.create_db(db)
 
         # Return an instance of the pipeline class with the db connection
         return cls(db)
@@ -84,7 +83,7 @@ class UrlPipe:
             # This block executes regardless of whether an exception occurred
             # Commit transaction only if no exceptions were raised
             if not self.db.closed:
-                print('!!! commit', item)
+                print('!!! commit', get_class(item))
                 self.db.commit()
 
 

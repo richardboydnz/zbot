@@ -15,7 +15,7 @@ class NoLinkMarkdownConverter(StandardMarkdownConverter):
         return text
     
 def markdown(text: str, links: bool = True, **options) -> str:
-    soup = BeautifulSoup(text)
+    soup = BeautifulSoup(text, features="lxml")
     return soup_to_markdown(soup)
 
 def soup_to_markdown(soup: BeautifulSoup|Tag, links: bool = True, **options) -> str:

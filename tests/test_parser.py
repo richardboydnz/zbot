@@ -86,11 +86,11 @@ def test_parse_fragment():
 
     html_hash = hash64(example_html)
     fragment_text = main
-    fragment_hash = hash64(main)
+    content_hash = hash64(main)
     content_type = 'html'
 
     items = spider.parse_fragment(response, orig_response=orig_response, 
-                                  html_hash=html_hash, content_type=content_type)
+                                  html_hash=html_hash, content_type=content_type, path = "")
 
     content_hash = ""
     for item in items:
@@ -98,9 +98,9 @@ def test_parse_fragment():
         print( item )
         if isinstance(item, ContentItem):
             content_hash = item['content_hash']
-            assert item['fragment_hash'] == fragment_hash
+            assert item['content_hash'] == content_hash
         elif isinstance(item, HtmlContentItem):
-            assert item['fragment_hash'] == fragment_hash
+            assert item['content_hash'] == content_hash
             assert item['html_hash'] == html_hash
         # elif isinstance(item, Request):
         #     print("fragment ------------------")

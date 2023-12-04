@@ -1,8 +1,7 @@
 from scrapy.item import Item, Field  # type: ignore
 from typing import Optional
 
-from myscraper.db.db_store import DBMapping, SimpleDbStore
-from ..db import connection
+from myscraper.db.db_store import DBMapping, SimpleDbStore, connection
 
 
 download_table = """
@@ -47,7 +46,7 @@ downloads_db_mapping = DBMapping(
     item_to_db=field_mapping_downloads,
     itemClass=DownloadItem,
     db_table='download_fact',
-    key_field='url_id',  # Assuming 'url_id' is the unique key field
+    key_field='',  # can not be queried with a secondary key
     id_field='download_id'
 )
 

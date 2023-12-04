@@ -41,7 +41,7 @@ DOWNLOADER_MIDDLEWARES = {
 #USER_AGENT = "myscraper (+http://www.yourdomain.com)"
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = False
+ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -120,11 +120,11 @@ FEED_EXPORT_ENCODING = "utf-8"
 
 # Enable AutoThrottle to automatically adjust the scraping speed based on the server's response times and load.
 AUTOTHROTTLE_ENABLED = True
-AUTOTHROTTLE_START_DELAY = 5  # Initial delay (in seconds) between requests.
-AUTOTHROTTLE_MAX_DELAY = 60  # Maximum delay (in seconds) between requests.
+AUTOTHROTTLE_START_DELAY = 1  # Initial delay (in seconds) between requests.
+AUTOTHROTTLE_MAX_DELAY = 5  # Maximum delay (in seconds) between requests.
 
 # Introduce a delay between consecutive requests.
-DOWNLOAD_DELAY = 3  # Delay (in seconds) between consecutive requests.
+DOWNLOAD_DELAY = 2  # Delay (in seconds) between consecutive requests.
 
 # Limit the number of concurrent requests.
 CONCURRENT_REQUESTS = 3
@@ -142,7 +142,7 @@ DEPTH_LIMIT = 0
 DOWNLOAD_MAXSIZE = 10485760  # 10 MB
 
 # Retry middleware settings.
-RETRY_TIMES = 2  # Number of times a request should be retried.
+RETRY_TIMES = 0  # Number of times a request should be retried.
 RETRY_HTTP_CODES = [500, 502, 503, 504, 408]  # HTTP codes that should trigger a retry.
 
 # If you don't want to rotate user agents, set a default user agent.

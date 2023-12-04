@@ -35,18 +35,19 @@ url_patterns = [
 
 class Fragment_Parser:
 
-    def __init__(self, spider:CachedSpider, response: HtmlResponse, html_hash: Hash64, content_type='html', **kwargs) -> None:
+    def __init__(self, spider:CachedSpider, response: HtmlResponse, html_hash: Hash64, path: str, content_type='html', **kwargs) -> None:
         self.create_url = spider.create_url
         self.html_hash = html_hash
+        self.path = path
         self.response = response
         self.url = response.url
         self.url_item = self.create_url(self.url)
         self.domain_name = self.url_item['domain_name']
         self.content_type = content_type
         self.fragment_text: str = response.text
-        self.fragment_hash=hash64(self.fragment_text)
+        self.content_hash=hash64(self.fragment_text)
 
-        self.soup = BeautifulSoup(self.fragment_text)
+        self.soup = BeautifulSoup(self.fragment_text, features="lxml")
 
     def parse_fragment(self):
         fragment = self.response.text
@@ -57,7 +58,8 @@ class Fragment_Parser:
         association_item = HtmlContentItem(
             domain_name=self.domain_name,
             html_hash=self.html_hash,
-            fragment_hash=self.fragment_hash
+            content_hash=self.content_hash,
+            path=self.path
         )
         yield association_item
 
@@ -69,12 +71,13 @@ class Fragment_Parser:
         plain_text = markdown(fragment_text, links=False)
 
         return ContentItem(
+            content_hash=self.content_hash,  # Or hash64(response.text) if you want to use the fragment_hash
             domain_name=self.domain_name,
             fragment_text= fragment_text,
-            fragment_hash=hash64(fragment_text),
+            fragment_hash=self.content_hash,
             content_text=content_text,
+            content_type=self.content_type,
             ## temporarily use fragment_text !!!
-            content_hash=hash64(fragment_text),  # Or hash64(response.text) if you want to use the fragment_hash
             plain_text=plain_text,
             plain_hash=hash64(plain_text)
         )
@@ -99,11 +102,11 @@ class Fragment_Parser:
 
         for url_match in css_url_pattern.finditer(css_content):
             url = url_match.group(1)
-            yield self.create_css_link_item(url, 'resources', link_tag, link_attr)
+            yield self.create_css_link_item(url, 'resource', link_tag, link_attr)
         
         for import_match in css_import_pattern.finditer(css_content):
             url = import_match.group(1)
-            yield self.create_css_link_item(url, 'styles', link_tag, link_attr)
+            yield self.create_css_link_item(url, 'style', link_tag, link_attr)
 
 
     def create_css_link_item(self, url: str, link_type: str, link_tag: str, link_attr: str) -> LinkItem:
@@ -112,7 +115,7 @@ class Fragment_Parser:
 
         return LinkItem(
             domain_name=self.domain_name,
-            fragment_hash=self.fragment_hash,
+            content_hash=self.content_hash,
             target_url=target_url,
             link_text='',
             link_type=link_type,
@@ -127,7 +130,7 @@ class Fragment_Parser:
 
         return LinkItem(
             domain_name=self.domain_name,
-            fragment_hash=self.fragment_hash,
+            content_hash=self.content_hash,
             target_url=target_url,
             link_text=md_soup(bs_tag),
             link_tag=bs_tag.name,

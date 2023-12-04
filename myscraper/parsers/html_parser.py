@@ -75,6 +75,7 @@ def extract_fragments( sorted_fragments):
     return extracted_fragments
 
 def get_fragments(html_content: str) -> List[Tuple[Tag, Path ]]:
+    # print('------get_fragments')
     fragments = find_fragments(html_content)
     sorted_fragments = sort_fragments(fragments)
     extracted_fragments = extract_fragments( sorted_fragments)

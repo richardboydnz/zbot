@@ -1,6 +1,6 @@
-from myscraper.db.db_cache import DBSingletonCache
+from myscraper.db.db_cache import DbGeneratorCache
 from myscraper.db.db_store import DBMapping
-from myscraper.items.item_cache import SingletonCache
+from myscraper.items.item_cache import GeneratorCache
 from urllib.parse import urlparse
 from typing import Optional
 from scrapy.item import Item, Field  # type: ignore
@@ -84,8 +84,8 @@ def make_url(url: str) -> UrlItem:
         file_extension=file_extension
     )
 
-def UrlCache() -> SingletonCache:
-    return SingletonCache(url_db_mapping.key_field, make_url)
+def UrlCache() -> GeneratorCache:
+    return GeneratorCache(url_db_mapping.key_field, make_url)
 
 # def UrlDBCache(db: connection) -> DBSingletonCache:
 #     return DBSingletonCache(db, url_db_mapping, make_url)
