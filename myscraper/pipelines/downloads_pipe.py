@@ -1,9 +1,10 @@
 
+import logging
 from ..db import init_db # type: ignore
 
 from ..items import DownloadItem, HtmlItem, CrawlItem, ContentItem, HtmlContentItem, LinkItem, get_class
 from ..items import DomainDBCache, HtmlDBCache, DownloadDBStore, CrawlDBStore, ContentDBCache, HtmlContentDBStore, LinkDBStore
-from myscraper.items.url_item import make_url, url_db_mapping, UrlItem
+from myscraper.items.url_item import get_url_item, url_db_mapping, UrlItem
 from myscraper.db.db_cache import DbGeneratorCache
 
 # from myscraper.db.db_store import SimpleDbStore, DBMapping
@@ -32,6 +33,7 @@ class DownloadsPipe:
 
         # Create the database connection using settings
         db = init_db.get_db(db_settings)  # Modify the get_db method to accept settings
+        # init_db.create_db(db)
 
         # Return an instance of the pipeline class with the db connection
         return cls(db)
@@ -47,11 +49,13 @@ class DownloadsPipe:
         # Process items based on their type
         try:
             item['domain_id'] = self.domains.get_id(item['domain_name'])
+            print( get_class(item), end=" ")
 
             if isinstance(item, DownloadItem):
                 print()
                 print()
                 print( item['url'], item['http_status'])
+                print()
                 return self.process_download_item(item)
             elif isinstance(item, LinkItem ):
                 return self.process_link_item(item)
@@ -73,13 +77,15 @@ class DownloadsPipe:
         except Exception as e:
             # Rollback transaction in case of error
             self.db.rollback()
+            spider.logger.error('########################################')
+
             spider.logger.error(f"Error processing item: {e}")
+            spider.logger.error(item)
             raise
         finally:
             # This block executes regardless of whether an exception occurred
             # Commit transaction only if no exceptions were raised
             if not self.db.closed:
-                print( get_class(item), end=" ")
                 self.db.commit()
 
 
@@ -123,6 +129,6 @@ class DownloadsPipe:
 
 
     def make_db_url_item(self, url: str) -> UrlItem:
-        url_item = make_url(url)
+        url_item = get_url_item(url)
         url_item["domain_id"] = self.domains.get_id(url_item["domain_name"])
         return url_item

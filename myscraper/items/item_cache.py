@@ -40,8 +40,9 @@ class GeneratorCache(ItemCache):
             return item
 
         item = self.generate(key)
-        stored_item = self.store_item(item)
-        return stored_item
+        if item is not None:
+            item = self.store_item(item)
+        return item
 
     def __call__(self, key: str) -> Optional[Item]:
         return self.gen_item(key)

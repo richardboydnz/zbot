@@ -121,10 +121,10 @@ FEED_EXPORT_ENCODING = "utf-8"
 # Enable AutoThrottle to automatically adjust the scraping speed based on the server's response times and load.
 AUTOTHROTTLE_ENABLED = True
 AUTOTHROTTLE_START_DELAY = 1  # Initial delay (in seconds) between requests.
-AUTOTHROTTLE_MAX_DELAY = 5  # Maximum delay (in seconds) between requests.
+AUTOTHROTTLE_MAX_DELAY = 3  # Maximum delay (in seconds) between requests.
 
 # Introduce a delay between consecutive requests.
-DOWNLOAD_DELAY = 2  # Delay (in seconds) between consecutive requests.
+DOWNLOAD_DELAY = 1  # Delay (in seconds) between consecutive requests.
 
 # Limit the number of concurrent requests.
 CONCURRENT_REQUESTS = 3

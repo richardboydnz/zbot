@@ -72,10 +72,10 @@ def test_parse_item():
             assert item['html_hash'] == html_hash
         elif isinstance(item, Request):
             request = item
-            print("fragment ------------------")
+            print("content ------------------")
             print( request.method, request.url )
-            print(request.meta['fragment'])
-            assert request.meta['fragment'] in [footer, nav, header, aside, main]
+            print(request.meta['content'])
+            assert request.meta['content'] in [footer, nav, header, aside, main]
 
 def test_parse_fragment():
     url = 'http://example.com'

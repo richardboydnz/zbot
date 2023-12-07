@@ -11,7 +11,8 @@ CREATE TABLE html_content_bridge (
     domain_id INTEGER REFERENCES domain_dim(domain_id),
     html_id INTEGER REFERENCES html_dim(html_id),
     content_id INTEGER,
-    path TEXT NOT NULL
+    path TEXT NOT NULL,
+    UNIQUE(domain_id, html_id, content_id)
 );
 """
 

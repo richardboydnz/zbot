@@ -1,16 +1,20 @@
+import logging
 import re
 from bs4 import BeautifulSoup, Tag
 # from scrapy.http import Request, Response # type: ignore
 from myscraper.items import ContentItem, CrawlItem, DownloadItem, HtmlContentItem, HtmlItem, LinkItem
 
 from myscraper.encode.hash import Hash64
-from scrapy.http import HtmlResponse # type: ignore
+from scrapy.http import HtmlResponse  # type: ignore
+
+from myscraper.items.url_item import abs_url # type: ignore
 
 from ..spiders.cached_spider import CachedSpider  # type: ignore
 from ..items import LinkItem
 from ..encode.markdown import soup_to_markdown as md_soup, markdown 
 from myscraper.encode.hash import hash64, Hash64 
 from scrapy.crawler import Crawler  # type: ignore
+from ..items.url_item import fragment_separator
 
 url_patterns = [
     ('a', 'href', 'webpage'),
@@ -35,12 +39,13 @@ url_patterns = [
 
 class Fragment_Parser:
 
-    def __init__(self, spider:CachedSpider, response: HtmlResponse, html_hash: Hash64, path: str, content_type='html', **kwargs) -> None:
+    # def __init__(self, spider:CachedSpider, response: HtmlResponse, html_hash: Hash64, path: str, content_type='html', **kwargs) -> None:
+    def __init__(self, spider:CachedSpider, response: HtmlResponse, content_type, **kwargs) -> None:
         self.create_url = spider.create_url
-        self.html_hash = html_hash
-        self.path = path
+        # self.html_hash = html_hash
+        # self.path = path
         self.response = response
-        self.url = response.url
+        self.url = response.url.split(fragment_separator)[0] # take off html_hash and any other # string 
         self.url_item = self.create_url(self.url)
         self.domain_name = self.url_item['domain_name']
         self.content_type = content_type
@@ -50,19 +55,8 @@ class Fragment_Parser:
         self.soup = BeautifulSoup(self.fragment_text, features="lxml")
 
     def parse_fragment(self):
-        fragment = self.response.text
         self.content_item = self.create_content_item()
-
         yield self.content_item        
-
-        association_item = HtmlContentItem(
-            domain_name=self.domain_name,
-            html_hash=self.html_hash,
-            content_hash=self.content_hash,
-            path=self.path
-        )
-        yield association_item
-
         yield from self.gen_link_items()
 
     def create_content_item(self) -> ContentItem:
@@ -101,7 +95,7 @@ class Fragment_Parser:
         css_import_pattern = re.compile(r'@import\s+["\']?(.*?)["\']?;') # !!! untested
 
         for url_match in css_url_pattern.finditer(css_content):
-            url = url_match.group(1)
+            url = url_match.group(1).strip('\'"')
             yield self.create_css_link_item(url, 'resource', link_tag, link_attr)
         
         for import_match in css_import_pattern.finditer(css_content):
@@ -110,7 +104,7 @@ class Fragment_Parser:
 
 
     def create_css_link_item(self, url: str, link_type: str, link_tag: str, link_attr: str) -> LinkItem:
-        target_url = self.response.urljoin( url )
+        target_url = abs_url(self.response, url )
         target_url_item = self.create_url(target_url)
 
         return LinkItem(
@@ -124,10 +118,10 @@ class Fragment_Parser:
             is_internal= target_url_item['domain_name'] == self.domain_name
         )
     
-    def create_link_from_attr(self, bs_tag:BeautifulSoup, attr:str, link_type:str):
-        target_url = self.response.urljoin( bs_tag[attr] )
-        target_url_item = self.create_url(target_url)
+    def create_link_from_attr(self, bs_tag:Tag, attr:str, link_type:str):
 
+        target_url = abs_url(self.response, get_url_attr(bs_tag,attr) )
+        target_url_item = self.create_url(target_url)
         return LinkItem(
             domain_name=self.domain_name,
             content_hash=self.content_hash,
@@ -148,3 +142,14 @@ class Fragment_Parser:
 #     for link_item in gen_link_items(soup, domain):
 #         # Process each LinkItem
 #         pass
+
+def get_url_attr(tag:Tag, attr:str) -> str:
+    attribute: str | list[str] | None = tag.get(attr, '')
+    if isinstance(attribute, list):
+        # Join the list into a single string, separated by spaces
+        logging.error('should only be a single URL in attribute')
+        return attribute[0]
+    if attribute is None:
+        logging.error('attribute should contain URL')
+        return ""
+    return attribute

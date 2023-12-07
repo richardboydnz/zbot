@@ -27,7 +27,7 @@ def find_fragments(html_content:str)-> list[Tag]:
     fragments = [soup]
     
     # Define the tags to look for
-    tags_to_find = ['nav', 'aside', 'header', 'footer']
+    tags_to_find = ['head','body','nav', 'aside', 'header', 'footer', 'section']
     
     for tag in tags_to_find:
         # Find all elements for the tag

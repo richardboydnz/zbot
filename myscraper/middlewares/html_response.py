@@ -1,8 +1,11 @@
-from scrapy.http import HtmlResponse  # type: ignore
+from scrapy.http import HtmlResponse, Response  # type: ignore
+from scrapy.exceptions import IgnoreRequest # type: ignore
+
 import logging
 
 from myscraper.db import init_db
 from myscraper.items.content_item import ContentDBCache
+from myscraper.items.html_item import HtmlDBCache
 
 class HandleHtmlFragmentRequest:
     def __init__(self, db: init_db.connection):
@@ -31,32 +34,63 @@ class HandleHtmlFragmentRequest:
         # print(f'---- Request ---, request {request}')
 
         # Check if the request contains a fragment
-        fragment = request.meta.get('fragment')
-        if fragment:
-            # Check if the fragment already exists in the database
-            if self.fragment_exists_in_db(fragment):
-                logging.debug(f'Fragment already exists in DB, skipping: {fragment}')
-                return HtmlResponse(url=request.url, status=204)  # No content status
+        try:
+            if request.method == "GET":
+                logging.debug(f'pass on {request}')
 
-            # Process the fragment
-            return HtmlResponse(
-                url=request.url,
-                body=fragment.encode('utf-8'),
-                encoding='utf-8',
-                request=request
-            )
+                return None
+            if request.method == "INIT":
+                return Response(
+                    url=request.url,
+                    body=b"",
+                    request=request
+                )
+            elif request.method == "HTML":
+                content_hash = request.meta.get('content_hash')
+                if content_hash: # crawl or fragment
+                    logging.info(f'pass on {content_hash}')
+
+                    # Check if the fragment already exists in the database
+                    content_id = self.content_store.get_id(content_hash)
+                    content = request.meta.get('content')
+
+                    status = 200 if content_id is None else 201
+
+                    # Process the fragment
+                    return HtmlResponse(
+                        url=request.url,
+                        status=status,
+                        body=content.encode('utf-8'),
+                        encoding='utf-8',
+                        request=request,
+                    )
+                
+            logging.debug(f'pass on {request}')
+            return None
+        except IgnoreRequest as e:
+            raise
+        except Exception as e:
+            self.db.rollback()
+            spider.logger.error('########################################')
+
+            spider.logger.error(f"Error while processing request: {request}")
+            spider.logger.error(e)
+            raise
+        finally:
+            if not self.db.closed:
+                self.db.commit()
 
         return None  # Return None for other requests
 
-    def fragment_exists_in_db(self, fragment):
-        # Implement the logic to check if the fragment exists in the database
-        # For example, query the database using self.db_cache and check if the fragment is present
-        # Return True if exists, False otherwise
-        return False
+    # def fragment_exists_in_db(self, fragment):
+    #     # Implement the logic to check if the fragment exists in the database
+    #     # For example, query the database using self.db_cache and check if the fragment is present
+    #     # Return True if exists, False otherwise
+    #     return False
 
-    def process_exception(self, request, exception, spider):
-        if isinstance(exception, TCPTimedOutError):
-            return spider.handle_download_error(request, exception)
+    # def process_exception(self, request, exception, spider):
+    #     spider.logger.error(f'Exception occured while processing {request.url}: {exception}')
+    #     return None
 
         # You can add more exception types here if needed
 

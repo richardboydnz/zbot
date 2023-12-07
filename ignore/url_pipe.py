@@ -3,7 +3,7 @@ from scrapy import Item
 from myscraper.db.db_cache import DbGeneratorCache
 
 from myscraper.items import UrlItem
-from myscraper.items.url_item import make_url, url_db_mapping
+from myscraper.items.url_item import get_url_item, url_db_mapping
 
 from ..items import UrlCache
 from ..db import init_db # type: ignore
@@ -45,7 +45,7 @@ class UrlPipe:
         init_db.close_db(self.db)
 
     def make_db_url_item(self, url: str) -> UrlItem:
-        url_item = make_url(url)
+        url_item = get_url_item(url)
         url_item["domain_id"] = self.domains.get_id(url_item["domain_name"])
         return url_item
     

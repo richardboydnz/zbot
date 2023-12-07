@@ -57,11 +57,22 @@ url_db_mapping = DBMapping(
     id_field='url_id'
 )
 
-def make_url(url: str) -> UrlItem:
+def abs_url( response, url:str) -> str:
+    temp_url = response.urljoin( url )
+    return normalise_url(temp_url)
+
+fragment_separator = "??"
+
+def get_url_item(url: str) -> UrlItem:
     # Parse the URL
+    url = url.split('#')[0]
+    url = url.split(fragment_separator)[0]
+
     parsed_url = urlparse(url)
     protocol = parsed_url.scheme
-    domain_name = parsed_url.netloc
+    netloc = parsed_url.netloc
+    domain_name = netloc.split(':')[0]
+    port = netloc.split(':')[0] or "80"
     path = parsed_url.path
 
     path_segments = path.split('/')
@@ -72,9 +83,10 @@ def make_url(url: str) -> UrlItem:
     is_resource = file_extension != '' and file_extension not in ['html', 'htm', 'php', 'asp', 'aspx', 'jsp']
     is_webpage = not is_resource
 
+    norm_url = protocol + '://' + domain_name + path
     return UrlItem(
         url=url,
-        protocol=protocol,
+        protocol=protocol, 
         domain_name=domain_name,
         path=path,
         is_resource=is_resource,
@@ -84,8 +96,14 @@ def make_url(url: str) -> UrlItem:
         file_extension=file_extension
     )
 
+def build_url( u: UrlItem):
+    return u['protocol'] + '://' + u['domain_name'] + u['path']
+
+def normalise_url(url:str)-> str:
+    return build_url(get_url_item(url))
+
 def UrlCache() -> GeneratorCache:
-    return GeneratorCache(url_db_mapping.key_field, make_url)
+    return GeneratorCache(url_db_mapping.key_field, get_url_item)
 
 # def UrlDBCache(db: connection) -> DBSingletonCache:
 #     return DBSingletonCache(db, url_db_mapping, make_url)

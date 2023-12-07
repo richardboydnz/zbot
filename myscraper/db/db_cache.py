@@ -41,7 +41,10 @@ class DbCache(GeneratorCache):
 
     def get_id(self, key: str) -> Optional[int]:
         item = self.gen_item(key)
-        return item.get(self.id_field) if item else None
+        if item is None:
+            return None
+        
+        return item.get(self.id_field, None)
 
     def fetch_item(self, key: str) -> Item:
         # fetch and store in 2 layers of cache
@@ -67,4 +70,5 @@ class DbGeneratorCache(DbCache):
         if item is None:
             item = self.__backup_fetch2(key)
         return item
+    
 
