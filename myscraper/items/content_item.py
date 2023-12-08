@@ -52,6 +52,7 @@ content_db_mapping = DBMapping(
     itemClass=ContentItem,
     db_table='content_dim',
     key_field='content_hash',
+    constraint='(content_hash, domain_id)',
     id_field='content_id'
 )
 

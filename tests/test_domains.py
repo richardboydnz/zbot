@@ -1,7 +1,8 @@
 import pytest
 from unittest.mock import Mock
 from myscraper.db import init_db
-from myscraper.items.domain_item import DomainItem, DomainDBCache, domain_db_mapping  # Replace with actual imports
+from myscraper.db.db_cache import DbGeneratorCache
+from myscraper.items.domain_item import DomainItem, DomainDBCache, domain_db_mapping, make_domain  # Replace with actual imports
 
 # Mock Database Connection
 
@@ -22,7 +23,8 @@ def mock_db_connection():
 # Fixture for DomainDBCache
 @pytest.fixture
 def domain_db_cache(mock_db_connection):
-    return DomainDBCache(mock_db_connection)
+    # return DomainDBCache(mock_db_connection)
+    return DbGeneratorCache[str](db, domain_db_mapping, make_domain)
 
 # Fixture for sample DomainItem
 @pytest.fixture

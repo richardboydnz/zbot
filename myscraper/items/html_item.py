@@ -34,6 +34,7 @@ html_db_mapping = DBMapping(
     itemClass=HtmlItem,
     db_table='html_dim',
     key_field='html_hash',
+    constraint='(html_hash, domain_id)',
     id_field='html_id'
 )
 

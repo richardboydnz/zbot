@@ -1,29 +1,45 @@
 
 import logging
+
+from myscraper.db.db_store import SimpleDbStore
 from ..db import init_db # type: ignore
 
-from ..items import DownloadItem, HtmlItem, CrawlItem, ContentItem, HtmlContentItem, LinkItem, get_class
-from ..items import DomainDBCache, HtmlDBCache, DownloadDBStore, CrawlDBStore, ContentDBCache, HtmlContentDBStore, LinkDBStore
-from myscraper.items.url_item import get_url_item, url_db_mapping, UrlItem
-from myscraper.db.db_cache import DbGeneratorCache
-
+# from ..items import DownloadItem, HtmlItem, CrawlItem, ContentItem, HtmlContentItem, LinkItem, get_class
+# from ..items import DomainDBCache, HtmlDBCache, DownloadDBStore, CrawlDBStore, ContentDBCache, HtmlContentDBStore, LinkDBStore
+from myscraper.db.db_cache import DbCache, DbGeneratorCache
 # from myscraper.db.db_store import SimpleDbStore, DBMapping
 # from scrapy import Item # type: ignore
-
+from ..items.items import get_class
+from ..items.domain_item import domain_db_mapping,make_domain
+from ..items.url_item import get_url_item, url_db_mapping, UrlItem
+from ..items.html_item import HtmlItem, html_db_mapping
+from ..items.download_item import DownloadItem, downloads_db_mapping
+from ..items.crawl_item import CrawlItem, crawl_db_mapping
+from ..items.content_item import ContentItem, content_db_mapping
+from ..items.html_content_item import HtmlContentItem, html_content_db_mapping
+from ..items.link_item import LinkItem, links_db_mapping
 
 class DownloadsPipe:
 
     def __init__(self, db):
         # Initialize the pipeline with the database connection
         self.db = db
-        self.domains = DomainDBCache(self.db)
-        self.urls = DbGeneratorCache(self.db, url_db_mapping, self.make_db_url_item)
-        self.crawl_store = CrawlDBStore(self.db)
-        self.html_store = HtmlDBCache(self.db)
-        self.download_store = DownloadDBStore(self.db)
-        self.content_store = ContentDBCache(self.db)
-        self.html_content_store = HtmlContentDBStore(self.db)
-        self.link_store = LinkDBStore(self.db)
+
+        # meta dims
+        self.domains = DbGeneratorCache[str](self.db, domain_db_mapping, make_domain)
+        self.crawl_store = SimpleDbStore(self.db, crawl_db_mapping)
+
+        # facts
+        self.download_store = SimpleDbStore(self.db, downloads_db_mapping)
+        self.link_store = SimpleDbStore(self.db, links_db_mapping)
+        self.html_content_store = SimpleDbStore(self.db, html_content_db_mapping)
+
+        # dimensions
+        self.urls = DbGeneratorCache[str](self.db, url_db_mapping, self.make_db_url_item)
+
+        self.html_store = DbCache[int](self.db, html_db_mapping)
+        self.content_store = DbCache[int](self.db, content_db_mapping)
+
 
 
     @classmethod
@@ -33,7 +49,6 @@ class DownloadsPipe:
 
         # Create the database connection using settings
         db = init_db.get_db(db_settings)  # Modify the get_db method to accept settings
-        # init_db.create_db(db)
 
         # Return an instance of the pipeline class with the db connection
         return cls(db)
@@ -130,5 +145,7 @@ class DownloadsPipe:
 
     def make_db_url_item(self, url: str) -> UrlItem:
         url_item = get_url_item(url)
+        test = url_item["domain_name"]
         url_item["domain_id"] = self.domains.get_id(url_item["domain_name"])
+        url_item["domain_id"] = self.domains.get_id(test)
         return url_item

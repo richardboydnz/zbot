@@ -1,5 +1,6 @@
+from types import NoneType
 from scrapy.item import Item, Field  # type: ignore
-from typing import Optional
+from typing import Optional, Type
 
 from myscraper.db.db_store import DBMapping, SimpleDbStore, connection
 
@@ -14,6 +15,7 @@ CREATE TABLE download_fact (
     http_status INTEGER,                                  -- HTTP status code
     headers TEXT,                                         -- HTTP headers as text
     crawl_id INTEGER REFERENCES crawl_dim(crawl_id)       -- Foreign key to crawl_dim
+    UNIQUE (crawl_id, url_id)
 );
 """
 
@@ -46,7 +48,8 @@ downloads_db_mapping = DBMapping(
     item_to_db=field_mapping_downloads,
     itemClass=DownloadItem,
     db_table='download_fact',
-    key_field='',  # can not be queried with a secondary key
+    key_field=None,  # can not be queried with a secondary key
+    constraint='(crawl_id, url_id)',
     id_field='download_id'
 )
 

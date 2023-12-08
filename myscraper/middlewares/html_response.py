@@ -48,7 +48,7 @@ class HandleHtmlFragmentRequest:
             elif request.method == "HTML":
                 content_hash = request.meta.get('content_hash')
                 if content_hash: # crawl or fragment
-                    logging.info(f'pass on {content_hash}')
+                    logging.debug(f'pass on {content_hash}')
 
                     # Check if the fragment already exists in the database
                     content_id = self.content_store.get_id(content_hash)
@@ -65,7 +65,7 @@ class HandleHtmlFragmentRequest:
                         request=request,
                     )
                 
-            logging.debug(f'pass on {request}')
+            logging.debug(f'fall through pass on {request}')
             return None
         except IgnoreRequest as e:
             raise

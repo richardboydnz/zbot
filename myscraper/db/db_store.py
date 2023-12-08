@@ -2,13 +2,18 @@ from typing import Any, Dict, NamedTuple, Type, Optional
 from scrapy import Item  # type: ignore
 from ..db import connection
 from ..items import get_class
+from typing import TypeVar, Generic
+
+KeyType = TypeVar('KeyType')
 
 class DBMapping(NamedTuple):
     item_to_db: Dict[str, str]
     itemClass: Type[Item]
     db_table: str
-    key_field: str
+    key_field: Optional[str]
+    constraint: str
     id_field: str
+
     
 class SimpleDbStore:
     # Does not check for uniqueness on key field
@@ -22,7 +27,8 @@ class SimpleDbStore:
     def create_store_sql(self):
         self.db_fields = list(self.map.item_to_db.keys())
         placeholders = ', '.join(['%s'] * len(self.db_fields))
-        self.store_sql = f"INSERT INTO {self.map.db_table} ({', '.join(self.db_fields)}) VALUES ({placeholders}) RETURNING {self.map.id_field};"
+        self.store_sql = f"INSERT INTO {self.map.db_table} ({', '.join(self.db_fields)}) VALUES ({placeholders}) ON CONFLICT {self.map.constraint} DO NOTHING RETURNING {self.map.id_field} ;"
+        self.fetch_by_id_sql = f"SELECT {self.map.id_field}, {', '.join(self.db_fields)} FROM {self.map.db_table} WHERE {self.map.id_field} = %s"
 
     def store_item(self, item: Item) -> Item:
         # stores and returns item with the correct id
@@ -36,16 +42,32 @@ class SimpleDbStore:
             if new_item_id:
                 item[self.map.id_field] = new_item_id[0]
                 return item
-            raise ValueError("Failed to retrieve new item ID after insertion.")
+            return None
+            # raise ValueError("Failed to retrieve new item ID after insertion.")
 
-class KeyedDbStore(SimpleDbStore):
-    # checks on key value before storing
-    # allows fetching on key value
+    def row_to_item(self, row:tuple):
+        item_data = {item_field: row[i + 1] for i, item_field 
+            in enumerate(self.map.item_to_db.values())}
+        item_data[self.map.id_field] = row[0]
+        return self.map.itemClass(**item_data)
+
+    def fetch_item_by_id(self, id:int):
+        with self.db.cursor() as cursor:
+            # print('--- Fetch: ', key)
+            cursor.execute(self.fetch_by_id_sql, (id,))
+            row = cursor.fetchone()
+            if row:
+                return self.row_to_item(row)
+            return None
+
+class KeyedDbStore(SimpleDbStore, Generic[KeyType]):
+    # checks on a semantic key value before storing
+    # allows fetching on semantic key value
     def create_store_sql(self):
         super().create_store_sql()
         self.fetch_sql = f"SELECT {self.map.id_field}, {', '.join(self.db_fields)} FROM {self.map.db_table} WHERE {self.map.key_field} = %s"
 
-    def fetch_item(self, key:str) -> Item:
+    def fetch_item(self, key:KeyType) -> Item:
         with self.db.cursor() as cursor:
             # print('--- Fetch: ', key)
             cursor.execute(self.fetch_sql, (key,))

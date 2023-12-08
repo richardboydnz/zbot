@@ -1,3 +1,4 @@
+from types import NoneType
 from scrapy.item import Item, Field  # type: ignore
 from typing import Optional
 
@@ -41,7 +42,9 @@ html_content_db_mapping = DBMapping(
     item_to_db=field_mapping_html_content,
     itemClass=HtmlContentItem,
     db_table='html_content_bridge',
-    key_field='',  # No secondary key
+    key_field=None,  # No secondary key
+    constraint='(domain_id, html_id, content_id)',
+
     id_field='bridge_id'
 )
 

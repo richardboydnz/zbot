@@ -8,13 +8,14 @@ from ..db import connection
 domain_table = """
 CREATE TABLE domain_dim (
     domain_id SERIAL PRIMARY KEY,
-    domain_name VARCHAR(255) NOT NULL
+    domain_name VARCHAR(255) NOT NULL,
+    UNIQUE (domain_name)
 );
 """
 
 class DomainItem(Item):
-    domain_id = Field()
-    domain_name = Field()
+    domain_id: Optional[int] = Field()
+    domain_name: str = Field()
 
 domain_field_mapping = {
     'domain_name': 'domain_name',
@@ -25,6 +26,7 @@ domain_db_mapping = DBMapping(
     itemClass=DomainItem,
     db_table='domain_dim',
     key_field='domain_name',
+    constraint='(domain_name)',
     id_field='domain_id'
 )
 
@@ -32,8 +34,8 @@ def make_domain(key: str) -> Optional[DomainItem]:
     return DomainItem(domain_name=key)
 
 def DomainCache() -> GeneratorCache:
-    key_field = 'domain_name'  # Assuming 'domain_name' is the key field for DomainItem
-    return GeneratorCache(key_field, make_domain)
+    assert domain_db_mapping.key_field is not None
+    return GeneratorCache(domain_db_mapping.key_field, make_domain)
 
 
 def DomainDBCache(db: connection) -> DbGeneratorCache:

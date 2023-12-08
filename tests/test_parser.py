@@ -75,22 +75,21 @@ def test_parse_item():
             print("content ------------------")
             print( request.method, request.url )
             print(request.meta['content'])
-            assert request.meta['content'] in [footer, nav, header, aside, main]
+            assert request.meta['content'] in [footer, nav, header, aside, main, section, head, body]
 
 def test_parse_fragment():
     url = 'http://example.com'
     orig_response = HtmlResponse(url=url, body=example_html, encoding='utf-8')
-    response = HtmlResponse(url=url, body=main, encoding='utf-8')
+    response = HtmlResponse(url=url, status=200, body=main, encoding='utf-8')
     # Instantiate the spider and call find_fragments
-    spider = WebsiteSpider()
+    spider = WebsiteSpider('example.com')
 
     html_hash = hash64(example_html)
     fragment_text = main
     content_hash = hash64(main)
     content_type = 'html'
 
-    items = spider.parse_fragment(response, orig_response=orig_response, 
-                                  html_hash=html_hash, content_type=content_type, path = "")
+    items = spider.parse_fragment(response, html_hash=html_hash, content_hash=content_hash, path = "", content_type=content_type,orig_response=orig_response, )
 
     content_hash = ""
     for item in items:
@@ -155,7 +154,19 @@ aside = """<aside>
 main = """<!DOCTYPE html>
 
 <html manifest="site.manifest">
-<head>
+
+
+</html>
+"""
+
+section = """<section>
+<h2>Our Mission</h2>
+<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+<iframe height="200" src="frame.html" width="300"></iframe>
+<iframe height="200" srcdoc="&lt;p&gt;Inline HTML content here.&lt;/p&gt;" width="300"></iframe>
+</section>"""
+
+head = """<head>
 <title>©My Complex Web Page</title>
 <script src="script.js"></script>
 <style>
@@ -166,17 +177,13 @@ main = """<!DOCTYPE html>
         main { padding: 20px; }
         video, img, audio, object { display: block; margin-top: 20px; }
     </style>
-</head>
-<body>
+</head>"""
+
+body = """<body>
 
 
 <main>
-<section>
-<h2>Our Mission</h2>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-<iframe height="200" src="frame.html" width="300"></iframe>
-<iframe height="200" srcdoc="&lt;p&gt;Inline HTML content here.&lt;/p&gt;" width="300"></iframe>
-</section>
+
 <article>
 <h2>Featured Content</h2>
 <video controls="" poster="poster.jpg" width="400">
@@ -193,10 +200,7 @@ main = """<!DOCTYPE html>
 </article>
 </main>
 
-</body>
-</html>
-"""
-
+</body>"""
 # Run the test
 # test_find_fragments()
 # if __name__ == "__main__":

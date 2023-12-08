@@ -19,6 +19,8 @@ DB_SETTINGS = {
     'port': '5432'
 }
 
+CLEAR_DB = False
+CRAWL_DOMAIN = 'ballet.zavidan.info'
 
 SPIDER_MODULES = ["myscraper.spiders"]
 NEWSPIDER_MODULE = "myscraper.spiders"

@@ -23,7 +23,6 @@ CREATE TABLE url_dim (
 );
 """
 
-
 class UrlItem(Item):
     url_id: Optional[int] = Field()
     url: str = Field()
@@ -54,6 +53,7 @@ url_db_mapping = DBMapping(
     itemClass=UrlItem,
     db_table='url_dim',
     key_field='url',
+    constraint='(url, domain_id)',
     id_field='url_id'
 )
 
@@ -103,6 +103,7 @@ def normalise_url(url:str)-> str:
     return build_url(get_url_item(url))
 
 def UrlCache() -> GeneratorCache:
+    assert url_db_mapping.key_field is not None
     return GeneratorCache(url_db_mapping.key_field, get_url_item)
 
 # def UrlDBCache(db: connection) -> DBSingletonCache:

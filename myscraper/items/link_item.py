@@ -1,3 +1,4 @@
+from types import NoneType
 from scrapy.item import Item, Field  # type: ignore
 from typing import Optional
 
@@ -31,6 +32,7 @@ CREATE TABLE link_fact (
     link_attr TEXT,
     link_type TEXT,
     is_internal BOOLEAN
+    UNIQUE (link_id)
 );
 """
 
@@ -50,7 +52,8 @@ links_db_mapping = DBMapping(
     item_to_db=field_mapping_links,
     itemClass=LinkItem,
     db_table='link_fact',
-    key_field='',  # can not be queried with a secondary key
+    key_field=None,  # can not be queried with a secondary key
+    constraint='(link_id)',
     id_field='link_id',  # Assuming 'fragment_id' is the unique key field
 )
 

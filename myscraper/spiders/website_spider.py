@@ -1,7 +1,8 @@
 import datetime
 import logging
 from scrapy.http import Request, Response # type: ignore
-from myscraper.db import init_db # type: ignore
+from myscraper.db import init_db
+from myscraper.db.db_store import KeyedDbStore # type: ignore
 from myscraper.items import CrawlItem, HtmlItem, DownloadItem, LinkItem
 from myscraper.items.html_content_item import HtmlContentItem
 from myscraper.items.html_item import HtmlDBCache, make_html
@@ -13,8 +14,8 @@ from ..parsers.html_parser import get_fragments
 from scrapy.spidermiddlewares.httperror import HttpError  # type: ignore
 from ..items.url_item import build_url, fragment_separator, normalise_url
 from scrapy.exceptions import IgnoreRequest # type: ignore
-
-
+from psycopg2.extensions import connection
+from ..items.html_item import html_db_mapping
 
 
 check_resources = False
@@ -23,18 +24,37 @@ class WebsiteSpider(CachedSpider):
     name: str = 'myscraper'
     handle_httpstatus_all = True
 
+    @classmethod
+    def from_crawler(cls, crawler, *args, **kwargs):
+        # spider = super().from_crawler(crawler, *args, **kwargs)
 
-    def __init__(self, domain_name: str | None = None):
+        # Extract settings from the crawler
+        db_settings = crawler.settings.getdict('DB_SETTINGS')
+        db = init_db.get_db(db_settings)  # Modify the get_db method to accept settings
+
+        if crawler.settings.get('CLEAR_DB'):
+            init_db.create_db(db)
+
+        domain_name = crawler.settings.get('CRAWL_DOMAIN', 'ballet.zavidan.info')
+
+        # Create the database connection using settings
+
+        # Return an instance of the pipeline class with the db connection
+        return cls(db, domain_name)
+
+    def __init__(self, db: connection, domain_name: str):
         super().__init__()
         # self.html_store = HtmlDBCache(self.db)
+        self.domain_name = domain_name
+        # self.html_store = KeyedDbStore[int](self.db, html_db_mapping)
 
 
         # self.domain_name : str = domain_name or 'crownrelo-co-nz.archive.zavidan.nz'
         # self.domain_name : str = domain_name or 'www.graceremovals.co.nz'
         # self.domain_name : str = domain_name or 'ballet.zavidan.info'
-        self.domain_name : str = domain_name or 'www.crownrelo.co.nz'
+        # self.domain_name : str = domain_name or 'www.crownrelo.co.nz'
         
-        self.allowed_domains = [self.domain_name]
+        self.allowed_domains = [domain_name]
         self.start_urls: list[str] = [f'http://{self.domain_name}']#, f'https://{self.domain_name}']
 
         # self.domain_item = self.create_domain(self.allowed_domains[0])
