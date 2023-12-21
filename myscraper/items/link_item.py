@@ -14,6 +14,7 @@ class LinkItem(Item):
     content_id: Optional[int] = Field()
     content_hash: Optional[int] = Field()
     target_url: Optional[str] = Field()
+    target_url_raw: Optional[str] = Field()
     target_url_id: Optional[int] = Field()
     link_text: str = Field()
     link_tag: str= Field()
@@ -27,6 +28,7 @@ CREATE TABLE link_fact (
     domain_id INTEGER,
     target_url_id INTEGER,
     content_id INTEGER,
+    target_url_raw TEXT,
     link_text TEXT,
     link_tag TEXT,
     link_attr TEXT,
@@ -43,6 +45,7 @@ field_mapping_links = {
     'domain_id': 'domain_id',
     'target_url_id': 'target_url_id',
     'content_id': 'content_id',
+    'target_url_raw': 'target_url_raw',
     'link_text': 'link_text',
     'link_tag': 'link_tag',
     'link_attr': 'link_attr',

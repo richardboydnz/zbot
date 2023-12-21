@@ -1,3 +1,10 @@
+
+BOT_NAME = "testscraper"
+
+LOG_LEVEL = 'INFO'
+
+CRAWL_DOMAIN : str = 'ballet.zavidan.info'
+
 PG_DB_SETTINGS = {
     'database': 'crown_scraping_test',
     'user': 'crown_scraping',
@@ -13,3 +20,5 @@ SQLITE_DB_SETTINGS = {
 DB_SETTINGS = SQLITE_DB_SETTINGS
 
 CLEAR_DB = True
+REDIRECT_ENABLED = False
+FOLLOW_RESOURCES = False

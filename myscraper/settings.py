@@ -25,7 +25,7 @@ SQLITE_DB_SETTINGS = {
 
 DB_SETTINGS = SQLITE_DB_SETTINGS
 
-CLEAR_DB = False
+CLEAR_DB = True
 
 # CRAWL_DOMAIN = 'crownrelo-co-nz.archive.zavidan.nz'
         # self.domain_name : str = domain_name or 'crownrelo-co-nz.archive.zavidan.nz'

@@ -105,13 +105,14 @@ class Fragment_Parser:
             yield self.create_css_link_item(url, 'style', link_tag, link_attr)
 
 
-    def create_css_link_item(self, url: str, link_type: str, link_tag: str, link_attr: str) -> LinkItem:
-        domain_name, target_url = norm_url(url, self.response )
+    def create_css_link_item(self, url_raw: str, link_type: str, link_tag: str, link_attr: str) -> LinkItem:
+        domain_name, target_url = norm_url(url_raw, self.response )
 
         return LinkItem(
             domain_name=self.domain_name,
             content_hash=self.content_hash,
             target_url=target_url,
+            target_url_raw = url_raw,
             link_text='',
             link_type=link_type,
             link_tag=link_tag,
@@ -120,13 +121,14 @@ class Fragment_Parser:
         )
     
     def create_link_from_attr(self, bs_tag:Tag, attr:str, link_type:str):
-
-        domain_name, target_url = norm_url(get_url_attr(bs_tag,attr), self.response )
+        url_raw = get_url_attr(bs_tag,attr)
+        domain_name, target_url = norm_url(url_raw, self.response )
         # target_url_item = self.create_url(target_url)
         return LinkItem(
             domain_name=self.domain_name,
             content_hash=self.content_hash,
             target_url=target_url,
+            target_url_raw = url_raw,
             link_text=md_soup(bs_tag),
             link_tag=bs_tag.name,
             link_attr=attr,

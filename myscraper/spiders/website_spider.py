@@ -1,6 +1,6 @@
 import datetime
 import logging
-from typing import Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 from scrapy.http import Request, Response # type: ignore
 from myscraper.db import init_db
 from myscraper.db.db_store import KeyedDbStore # type: ignore
@@ -31,31 +31,81 @@ class WebsiteSpider(CachedSpider):
     def from_crawler(cls, crawler, *args, **kwargs):
         # Call the base implementation first to get the spider object
         spider = super().from_crawler(crawler, *args, **kwargs)
+        return spider.apply_settings(crawler.settings)
 
-        settings = crawler.settings
+        # settings = crawler.settings
 
-        db_settings = settings.getdict('DB_SETTINGS')
-        spider.db = init_db.get_db(db_settings)  # Modify the get_db method to accept settings
+        # db_settings = settings.getdict('DB_SETTINGS')
+        # spider.db = init_db.get_db(db_settings)  # Modify the get_db method to accept settings
 
-        if settings.get('CLEAR_DB'):
-            init_db.create_db(spider.db)
+        # if settings.get('CLEAR_DB'):
+        #     init_db.create_db(spider.db)
 
-        spider.follow_resources = settings.get('FOLLOW_RESOURCES', False)
-        spider.domain_name = settings.get('CRAWL_DOMAIN', 'ballet.zavidan.info')
+        # spider.follow_resources = settings.get('FOLLOW_RESOURCES', False)
+        # spider.domain_name = settings.get('CRAWL_DOMAIN', 'ballet.zavidan.info')
 
        
-        spider.allowed_domains = [spider.domain_name]
-        spider.start_urls = [f'http://{spider.domain_name}']
-        #, f'https://{spider.domain_name}']
+        # spider.allowed_domains = [spider.domain_name]
+        # spider.start_urls = [f'http://{spider.domain_name}']
+        # #, f'https://{spider.domain_name}']
 
-        # self.domain_item = self.create_domain(self.allowed_domains[0])
-        spider.crawl_item = spider.create_crawl_item()  # Creating CrawlItem
-        # Extract settings from the crawler
+        # # self.domain_item = self.create_domain(self.allowed_domains[0])
+        # spider.crawl_item = spider.create_crawl_item()  # Creating CrawlItem
+        # # Extract settings from the crawler
+
+
+        # # Return the spider instance
+        # return spider
+    
+    @classmethod
+    def from_settings(cls, settings):
+        spider = cls()
+        return spider.apply_settings(settings)
+
+        # db_settings = settings.getdict('DB_SETTINGS')
+        # spider.db = init_db.get_db(db_settings)  # Modify the get_db method to accept settings
+
+        # if settings.get('CLEAR_DB'):
+        #     init_db.create_db(spider.db)
+
+        # spider.follow_resources = settings.get('FOLLOW_RESOURCES', False)
+        # spider.domain_name = settings.get('CRAWL_DOMAIN', 'ballet.zavidan.info')
+
+       
+        # spider.allowed_domains = [spider.domain_name]
+        # spider.start_urls = [f'http://{spider.domain_name}']
+        # #, f'https://{spider.domain_name}']
+
+        # # self.domain_item = self.create_domain(self.allowed_domains[0])
+        # spider.crawl_item = spider.create_crawl_item()  # Creating CrawlItem
+        # # Extract settings from the crawler
 
 
         # Return the spider instance
-        return spider
-    
+
+    def apply_settings(self, settings: Dict[str, Any]):
+        db_settings = settings.get('DB_SETTINGS', {})
+        self.db = init_db.get_db(db_settings)  # Modify the get_db method to accept settings
+
+        if settings.get('CLEAR_DB'):
+            init_db.create_db(self.db)
+
+        self.follow_resources = settings.get('FOLLOW_RESOURCES', False)
+        self.domain_name = settings.get('CRAWL_DOMAIN', 'ballet.zavidan.info')
+
+       
+        self.allowed_domains = [self.domain_name]
+        self.start_urls = [f'http://{self.domain_name}']
+        #, f'https://{self.domain_name}']
+
+        # self.domain_item = self.create_domain(self.allowed_domains[0])
+        self.crawl_item = self.create_crawl_item()  # Creating CrawlItem
+        # Extract settings from the crawler
+
+
+        # Return the self instance
+        return self
+
     # def __init__(self):
     #     super().__init__()
     #     # self.html_store = HtmlDBCache(self.db)

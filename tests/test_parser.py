@@ -5,7 +5,9 @@ from myscraper.db.init_db import get_db, create_db
 
 from myscraper.items import ContentItem, HtmlContentItem, HtmlItem, DownloadItem
 from myscraper.middlewares.html_response import CUSTOM_SUCCESS
-from .settings_test import DB_SETTINGS
+from . import settings_test
+settings = vars(settings_test)
+
 from myscraper.spiders.website_spider import WebsiteSpider
 from myscraper.encode.hash import hash64
 from .example import example_html
@@ -14,6 +16,8 @@ from .example import example_html
 import pytest
 from bs4 import BeautifulSoup
 
+
+print('###################', settings)
 def test_html_roundtrip():
     # example_html = """<!DOCTYPE html>
     # <html manifest="site.manifest">
@@ -44,7 +48,7 @@ def test_html_roundtrip():
     assert extracted_footer == expected_footer
 
 def test_db():
-    db_settings = DB_SETTINGS
+    db_settings = settings['DB_SETTINGS']
     db = get_db(db_settings)
     create_db(db)
 
@@ -54,7 +58,8 @@ def test_parse_item():
     url = 'http://example.com'
     response = HtmlResponse(url=url, body=example_html, encoding='utf-8')
     # Instantiate the spider and call find_fragments
-    spider = WebsiteSpider(domain_name='example.com')
+    spider = WebsiteSpider.from_settings(settings)
+    spider.domain_name='example.com'
 
     items = spider.parse_item(response)
 
@@ -86,7 +91,7 @@ def test_parse_fragment():
 
     response = HtmlResponse(url=url, status=CUSTOM_SUCCESS, body=fragment_text, encoding='utf-8')
     # Instantiate the spider and call find_fragments
-    spider = WebsiteSpider('example.com')
+    spider = WebsiteSpider.from_settings(settings)
 
     html_hash = hash64(example_html)
     content_hash = hash64(fragment_text)
