@@ -110,6 +110,8 @@ class DownloadsPipe:
         item['html_id'] = self.html_store.get_id(item['html_hash']) \
             if item.get('html_hash') else 0
         item['crawl_id'] = self.crawl_id
+        if item.get('redirect_url'):
+            item['redirect_url_id'] = self.urls.get_id(item['redirect_url'])
 
         self.download_store.store_item(item)
         return None

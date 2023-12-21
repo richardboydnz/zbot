@@ -1,6 +1,6 @@
 from typing import Dict, Optional, Type, Callable
 from scrapy import Item # type: ignore
-from ..db import connection
+from ..db import Connection
 
 from myscraper.db.db_store import DBMapping, KeyedDbStore, SimpleDbStore  # type: ignore
 from ..items.item_cache import GeneratorCache, ItemCache
@@ -10,7 +10,7 @@ T = TypeVar('T')
 
 class DbCache(GeneratorCache[T]):
     # enforces a unique keyed field
-    def __init__(self, db: connection, map: DBMapping ):
+    def __init__(self, db: Connection, map: DBMapping ):
         assert map.key_field is not None
         super().__init__(map.key_field)
         self.db_store = KeyedDbStore[T](db, map)
@@ -79,7 +79,7 @@ class DbCache(GeneratorCache[T]):
         return db_item
     
 class DbGeneratorCache(DbCache[T]):
-    def __init__(self, db: connection, map: DBMapping,
+    def __init__(self, db: Connection, map: DBMapping,
                  backup_fetch: Callable[[T], Optional[Item]]):
         super().__init__(db, map)
         self.__backup_fetch2 = backup_fetch

@@ -7,7 +7,7 @@ from myscraper.items import ContentItem, CrawlItem, DownloadItem, HtmlContentIte
 from myscraper.encode.hash import Hash64
 from scrapy.http import HtmlResponse  # type: ignore
 
-from myscraper.items.url_item import abs_url # type: ignore
+from myscraper.items.url_item import norm_url # type: ignore
 
 from ..spiders.cached_spider import CachedSpider  # type: ignore
 from ..items import LinkItem
@@ -56,6 +56,8 @@ class Fragment_Parser:
 
     def parse_fragment(self):
         self.content_item = self.create_content_item()
+        logging.info('yield content item')
+        # print('yeild content item')
         yield self.content_item        
         yield from self.gen_link_items()
 
@@ -104,8 +106,7 @@ class Fragment_Parser:
 
 
     def create_css_link_item(self, url: str, link_type: str, link_tag: str, link_attr: str) -> LinkItem:
-        target_url = abs_url(self.response, url )
-        target_url_item = self.create_url(target_url)
+        domain_name, target_url = norm_url(url, self.response )
 
         return LinkItem(
             domain_name=self.domain_name,
@@ -115,13 +116,13 @@ class Fragment_Parser:
             link_type=link_type,
             link_tag=link_tag,
             link_attr=link_attr,
-            is_internal= target_url_item['domain_name'] == self.domain_name
+            is_internal= domain_name == self.domain_name
         )
     
     def create_link_from_attr(self, bs_tag:Tag, attr:str, link_type:str):
 
-        target_url = abs_url(self.response, get_url_attr(bs_tag,attr) )
-        target_url_item = self.create_url(target_url)
+        domain_name, target_url = norm_url(get_url_attr(bs_tag,attr), self.response )
+        # target_url_item = self.create_url(target_url)
         return LinkItem(
             domain_name=self.domain_name,
             content_hash=self.content_hash,
@@ -130,7 +131,7 @@ class Fragment_Parser:
             link_tag=bs_tag.name,
             link_attr=attr,
             link_type=link_type,
-            is_internal= target_url_item['domain_name'] == self.domain_name
+            is_internal= domain_name == self.domain_name
         )
 
 # if __name__ == "__main__":

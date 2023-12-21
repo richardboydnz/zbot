@@ -3,12 +3,12 @@ from myscraper.db.db_cache import DbGeneratorCache
 from myscraper.db.db_store import DBMapping
 from myscraper.items.item_cache import GeneratorCache 
 from scrapy.item import Item, Field  # type: ignore
-from ..db import connection
+from ..db import Connection
 
 domain_table = """
 CREATE TABLE domain_dim (
-    domain_id SERIAL PRIMARY KEY,
-    domain_name VARCHAR(255) NOT NULL,
+    domain_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    domain_name TEXT NOT NULL,
     UNIQUE (domain_name)
 );
 """
@@ -38,7 +38,7 @@ def DomainCache() -> GeneratorCache:
     return GeneratorCache(domain_db_mapping.key_field, make_domain)
 
 
-def DomainDBCache(db: connection) -> DbGeneratorCache:
+def DomainDBCache(db: Connection) -> DbGeneratorCache:
     return DbGeneratorCache(db, domain_db_mapping, make_domain)
 
 # You'll need to define `create_gen_func_url` and `create_gen_func_domain`

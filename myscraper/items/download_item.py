@@ -2,19 +2,25 @@ from types import NoneType
 from scrapy.item import Item, Field  # type: ignore
 from typing import Optional, Type
 
-from myscraper.db.db_store import DBMapping, SimpleDbStore, connection
-
+from myscraper.db.db_store import DBMapping, SimpleDbStore
+from myscraper.db import Connection
 
 download_table = """
 CREATE TABLE download_fact (
-    download_id SERIAL PRIMARY KEY,
-    domain_id INTEGER REFERENCES domain_dim(domain_id),   -- Foreign key to domain_dim
-    url_id INTEGER REFERENCES url_dim(url_id),            -- Foreign key to url_dim
-    html_id INTEGER,                                    -- New column for html_hash
-    download_timestamp TIMESTAMP NOT NULL,                -- Timestamp of the download
-    http_status INTEGER,                                  -- HTTP status code
-    headers TEXT,                                         -- HTTP headers as text
-    crawl_id INTEGER REFERENCES crawl_dim(crawl_id)       -- Foreign key to crawl_dim
+    download_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    domain_id INTEGER,
+    url_id INTEGER,
+    redirect_url_id INTEGER,
+    html_id INTEGER,
+    download_timestamp TEXT NOT NULL,
+    http_status INTEGER,
+    headers TEXT,
+    crawl_id INTEGER,
+    FOREIGN KEY(domain_id) REFERENCES domain_dim(domain_id),
+    FOREIGN KEY(url_id) REFERENCES url_dim(url_id),
+    FOREIGN KEY(redirect_url_id) REFERENCES url_dim(url_id),
+    FOREIGN KEY(html_id) REFERENCES html_dim(html_id),
+    FOREIGN KEY(crawl_id) REFERENCES crawl_dim(crawl_id),
     UNIQUE (crawl_id, url_id)
 );
 """
@@ -32,6 +38,9 @@ class DownloadItem(Item):
     http_status: int = Field()
     headers: str = Field()
     crawl_id: Optional[int] = Field()
+    redirect_url: Optional[str] = Field()
+    redirect_url_id: Optional[int] = Field()
+
 
 field_mapping_downloads = {
     'domain_id': 'domain_id',
@@ -53,6 +62,6 @@ downloads_db_mapping = DBMapping(
     id_field='download_id'
 )
 
-def DownloadDBStore(db: connection) -> SimpleDbStore:
+def DownloadDBStore(db: Connection) -> SimpleDbStore:
     return SimpleDbStore(db, downloads_db_mapping)
 

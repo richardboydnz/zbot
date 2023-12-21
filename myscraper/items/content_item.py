@@ -4,19 +4,20 @@ from scrapy.item import Item, Field # type: ignore
 from myscraper.encode.hash import Hash64
 from ..db.db_store import DBMapping
 from ..db.db_cache import DbCache
-from ..db import connection
+from ..db import Connection
 
 content_table = """
 CREATE TABLE content_dim (
-    content_id SERIAL PRIMARY KEY,
-    content_hash BIGINT,
+    content_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content_hash INTEGER,
     content_text TEXT NOT NULL,
-    content_type VARCHAR(50),
+    content_type TEXT,
     plain_text TEXT,
-    plain_hash BIGINT,
-    domain_id INTEGER REFERENCES domain_dim(domain_id),
-    fragment_hash BIGINT,
+    plain_hash INTEGER,
+    domain_id INTEGER,
+    fragment_hash INTEGER,
     fragment_text TEXT NOT NULL,
+    FOREIGN KEY(domain_id) REFERENCES domain_dim(domain_id),
     UNIQUE (content_hash, domain_id)
 );
 """
@@ -56,5 +57,5 @@ content_db_mapping = DBMapping(
     id_field='content_id'
 )
 
-def ContentDBCache(db: connection) -> DbCache:
+def ContentDBCache(db: Connection) -> DbCache:
     return DbCache(db, content_db_mapping)

@@ -1,22 +1,20 @@
 import pytest
 from unittest.mock import Mock
-from myscraper.db import init_db
+from myscraper.db.init_db import get_db, create_db
 from myscraper.db.db_cache import DbGeneratorCache
 from myscraper.items.domain_item import DomainItem, DomainDBCache, domain_db_mapping, make_domain  # Replace with actual imports
+from .settings_test import DB_SETTINGS
 
 # Mock Database Connection
 
-DB_SETTINGS = {
-    'database': 'crown_scraping',
-    'user': 'crown_scraping',
-    'password': 'xAK9q5IMnj1opUh3',
-    'host': '192.168.1.10',
-    'port': '5432'
-}
-db = init_db.get_db(DB_SETTINGS)
+@pytest.fixture
+def db():
+    db =  get_db(DB_SETTINGS)
+    create_db(db)
+    return db
 
 @pytest.fixture
-def mock_db_connection():
+def mock_db_connection(db):
     # Mock the database connection here
     return db
 
@@ -24,7 +22,7 @@ def mock_db_connection():
 @pytest.fixture
 def domain_db_cache(mock_db_connection):
     # return DomainDBCache(mock_db_connection)
-    return DbGeneratorCache[str](db, domain_db_mapping, make_domain)
+    return DbGeneratorCache[str](mock_db_connection, domain_db_mapping, make_domain)
 
 # Fixture for sample DomainItem
 @pytest.fixture

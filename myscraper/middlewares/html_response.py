@@ -6,9 +6,12 @@ import logging
 from myscraper.db import init_db
 from myscraper.items.content_item import ContentDBCache
 from myscraper.items.html_item import HtmlDBCache
+from myscraper.db import Connection
 
+CUSTOM_SUCCESS = 220
+CUSTOM_EXISTS = 320
 class HandleHtmlFragmentRequest:
-    def __init__(self, db: init_db.connection):
+    def __init__(self, db: Connection):
         self.db = db
         self.content_store = ContentDBCache(self.db)
 
@@ -42,6 +45,7 @@ class HandleHtmlFragmentRequest:
             if request.method == "INIT":
                 return Response(
                     url=request.url,
+                    status = CUSTOM_SUCCESS,
                     body=b"",
                     request=request
                 )
@@ -53,8 +57,8 @@ class HandleHtmlFragmentRequest:
                     # Check if the fragment already exists in the database
                     content_id = self.content_store.get_id(content_hash)
                     content = request.meta.get('content')
-
-                    status = 200 if content_id is None else 201
+                    logging.debug(f'content search {content_id}')
+                    status = CUSTOM_SUCCESS if content_id is None else CUSTOM_EXISTS    # already exists
 
                     # Process the fragment
                     return HtmlResponse(
@@ -94,6 +98,9 @@ class HandleHtmlFragmentRequest:
 
         # You can add more exception types here if needed
 
+
+
+# ??? does this connect to anything?
     def handle_timeout(self, request, exception, spider):
         # Handle the timeout error
         spider.logger.error(f'TCP Timeout error occurred for {request.url}: {exception}')

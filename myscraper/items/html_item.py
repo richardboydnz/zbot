@@ -4,14 +4,15 @@ from ..db.db_cache import DbCache
 from ..db.db_store import DBMapping
 from ..encode.hash import hash64
 # from ..pipelines.downloads_pipe import DownloadsPipe
-from ..db import connection
+from ..db import Connection
 
 html_table = """
 CREATE TABLE html_dim (
-    html_id SERIAL PRIMARY KEY,
-    html_hash BIGINT,
+    html_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    html_hash INTEGER,
     html_data TEXT NOT NULL,
-    domain_id INTEGER REFERENCES domain_dim(domain_id),
+    domain_id INTEGER,
+    FOREIGN KEY(domain_id) REFERENCES domain_dim(domain_id),
     UNIQUE (html_hash, domain_id)
 );
 """
@@ -47,7 +48,7 @@ def make_html(domain_name: str, html_data: str) -> HtmlItem:
         html_data=html_data
     )
 
-def HtmlDBCache(db: connection) -> DbCache:
+def HtmlDBCache(db: Connection) -> DbCache:
     return DbCache(db, html_db_mapping)
 
 

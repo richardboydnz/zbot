@@ -2,7 +2,7 @@ from types import NoneType
 from scrapy.item import Item, Field  # type: ignore
 from typing import Optional
 
-from myscraper.db.db_store import DBMapping, SimpleDbStore, connection
+from myscraper.db.db_store import DBMapping, SimpleDbStore, Connection
 
 
 class LinkItem(Item):
@@ -23,15 +23,18 @@ class LinkItem(Item):
 
 link_table = """
 CREATE TABLE link_fact (
-    link_id SERIAL PRIMARY KEY,
-    domain_id INTEGER REFERENCES domain_dim(domain_id),
-    target_url_id INTEGER REFERENCES url_dim(url_id),
-    content_id INTEGER REFERENCES content_dim(content_id),
+    link_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    domain_id INTEGER,
+    target_url_id INTEGER,
+    content_id INTEGER,
     link_text TEXT,
     link_tag TEXT,
     link_attr TEXT,
     link_type TEXT,
-    is_internal BOOLEAN
+    is_internal BOOLEAN,
+    FOREIGN KEY(domain_id) REFERENCES domain_dim(domain_id),
+    FOREIGN KEY(target_url_id) REFERENCES url_dim(url_id),
+    FOREIGN KEY(content_id) REFERENCES content_dim(content_id),
     UNIQUE (link_id)
 );
 """
@@ -57,5 +60,5 @@ links_db_mapping = DBMapping(
     id_field='link_id',  # Assuming 'fragment_id' is the unique key field
 )
 
-def LinkDBStore(db: connection) -> SimpleDbStore:
+def LinkDBStore(db: Connection) -> SimpleDbStore:
     return SimpleDbStore(db, links_db_mapping)

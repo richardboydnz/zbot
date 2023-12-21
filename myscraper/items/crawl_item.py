@@ -1,12 +1,13 @@
 from types import NoneType
 from scrapy.item import Item, Field  # type: ignore
-from ..db import connection
+from ..db import Connection
 
 crawl_table = """
 CREATE TABLE crawl_dim (
-    crawl_id SERIAL PRIMARY KEY,
-    domain_id INTEGER REFERENCES domain_dim(domain_id),
-    crawl_timestamp TIMESTAMP,
+    crawl_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    domain_id INTEGER,
+    crawl_timestamp TEXT,
+    FOREIGN KEY(domain_id) REFERENCES domain_dim(domain_id),
     UNIQUE (domain_id, crawl_timestamp)
 );
 """
@@ -40,5 +41,5 @@ crawl_db_mapping = DBMapping(
 
 from myscraper.db.db_store import SimpleDbStore
 
-def CrawlDBStore(db: connection) -> SimpleDbStore:
+def CrawlDBStore(db: Connection) -> SimpleDbStore:
     return SimpleDbStore(db, crawl_db_mapping)

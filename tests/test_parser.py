@@ -1,10 +1,11 @@
 import pytest
 from scrapy.http import Request # type: ignore
 from scrapy.http import HtmlResponse
-from myscraper.db.init_db import get_db
+from myscraper.db.init_db import get_db, create_db
 
 from myscraper.items import ContentItem, HtmlContentItem, HtmlItem, DownloadItem
-from myscraper.settings import DB_SETTINGS
+from myscraper.middlewares.html_response import CUSTOM_SUCCESS
+from .settings_test import DB_SETTINGS
 from myscraper.spiders.website_spider import WebsiteSpider
 from myscraper.encode.hash import hash64
 from .example import example_html
@@ -45,6 +46,7 @@ def test_html_roundtrip():
 def test_db():
     db_settings = DB_SETTINGS
     db = get_db(db_settings)
+    create_db(db)
 
 
 def test_parse_item():
@@ -80,18 +82,19 @@ def test_parse_item():
 def test_parse_fragment():
     url = 'http://example.com'
     orig_response = HtmlResponse(url=url, body=example_html, encoding='utf-8')
-    response = HtmlResponse(url=url, status=200, body=main, encoding='utf-8')
+    fragment_text = main
+
+    response = HtmlResponse(url=url, status=CUSTOM_SUCCESS, body=fragment_text, encoding='utf-8')
     # Instantiate the spider and call find_fragments
     spider = WebsiteSpider('example.com')
 
     html_hash = hash64(example_html)
-    fragment_text = main
-    content_hash = hash64(main)
+    content_hash = hash64(fragment_text)
     content_type = 'html'
 
     items = spider.parse_fragment(response, html_hash=html_hash, content_hash=content_hash, path = "", content_type=content_type,orig_response=orig_response, )
 
-    content_hash = ""
+    content_hash = "unset"
     for item in items:
         print( item.__class__.__name__, ' ------------------------------------')
         print( item )
@@ -104,8 +107,6 @@ def test_parse_fragment():
         # elif isinstance(item, Request):
         #     print("fragment ------------------")
         #     print(item)
-
-
     pass
     # Assertions or checks on the fragments
     # assert 'header' in fragments

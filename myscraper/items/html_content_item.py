@@ -4,15 +4,17 @@ from typing import Optional
 
 from myscraper.db.db_store import DBMapping, SimpleDbStore
 from myscraper.encode.hash import Hash64
-from ..db import connection
+from ..db import Connection
 
 html_content_table = """
 CREATE TABLE html_content_bridge (
-    bridge_id SERIAL PRIMARY KEY,
-    domain_id INTEGER REFERENCES domain_dim(domain_id),
-    html_id INTEGER REFERENCES html_dim(html_id),
+    bridge_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    domain_id INTEGER,
+    html_id INTEGER,
     content_id INTEGER,
     path TEXT NOT NULL,
+    FOREIGN KEY(domain_id) REFERENCES domain_dim(domain_id),
+    FOREIGN KEY(html_id) REFERENCES html_dim(html_id),
     UNIQUE(domain_id, html_id, content_id)
 );
 """
@@ -48,5 +50,5 @@ html_content_db_mapping = DBMapping(
     id_field='bridge_id'
 )
 
-def HtmlContentDBStore(db: connection) -> SimpleDbStore:
+def HtmlContentDBStore(db: Connection) -> SimpleDbStore:
     return SimpleDbStore(db, html_content_db_mapping)

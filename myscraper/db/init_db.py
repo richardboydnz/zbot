@@ -1,5 +1,4 @@
 from typing import Dict, Any
-import psycopg2
 
 from ..items.domain_item import domain_table
 from ..items.crawl_item import crawl_table
@@ -9,8 +8,8 @@ from ..items.content_item import content_table
 from ..items.html_content_item import html_content_table
 from ..items.download_item import download_table
 from ..items.link_item import link_table
-from psycopg2.extensions import connection
-
+# from sqlite3 import Connection
+from .sqlite_mock import Connection
 
 
 drop_sql = """
@@ -28,27 +27,28 @@ DROP TABLE IF EXISTS domain_dim;
 """
 
 
-def get_db(db_settings: Dict[str,Any]) -> connection:
-    return psycopg2.connect(**db_settings)
+def get_db(db_settings: Dict[str,Any]) -> Connection:
+    return Connection(db_settings)
 
-def close_db(conn:connection):
+def close_db(conn:Connection):
     conn.close()
 
-def create_db(db:connection):
-    cursor = db.cursor()
-    cursor.execute(drop_sql)
-    cursor.execute(domain_table)
 
-    cursor.execute(crawl_table)
-    cursor.execute(url_table)
-    cursor.execute(html_table)
-    cursor.execute(content_table)
-    
-    cursor.execute(html_content_table)
-    cursor.execute(download_table)
-    cursor.execute(link_table)
+def create_db(db:Connection):
+    print('---------- Create DB')
+    with db.cursor() as cursor:
+        # cursor.executes(drop_sql)
+        cursor.executescript(drop_sql)
+        cursor.execute(domain_table)
 
-    db.commit()
+        cursor.execute(crawl_table)
+        cursor.execute(url_table)
+        cursor.execute(html_table)
+        cursor.execute(content_table)
+        
+        cursor.execute(html_content_table)
+        cursor.execute(download_table)
+        cursor.execute(link_table)
 
 
 # from dbutils.pooled_db import PooledDB

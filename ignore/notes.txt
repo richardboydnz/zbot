@@ -1,0 +1,115 @@
+I want a query to:
+RecentCrawls = select crawls in the last few days
+---
+DiscoveredPages = select links that come from content that is linked to html that is linked to downloads from RecentCrawls
+select target_urls of those links that are in the scanning_domain and are webpages
+---
+ScannedPages = next find the urls that have been successfully scanned (http_status:200) during RecentCrawls
+---
+please summarise the following into a db schema, identify important foreign keys that will be used, then create a query to fulfill the above requirements.
+---
+
+
+WITH T1 AS (
+    SELECT CURRENT_TIMESTAMP - INTERVAL '1 day' AS mytime
+),
+C AS (
+    SELECT crawl_id, domain_id
+    FROM crawl_dim
+    WHERE crawl_timestamp > (SELECT mytime FROM T1)
+),
+M AS (
+	SELECT url_id, MAX(D.crawl_id) AS max_crawl_id
+FROM C
+JOIN download_fact AS D ON C.crawl_id = D.crawl_id
+GROUP BY D.url_id
+),
+S AS (
+select D.url_id, domain_id, html_id
+FROM M
+JOIN download_fact AS D 
+  ON M.url_id = D.url_id
+  AND M.max_crawl_id = D.crawl_id
+),
+T AS (
+SELECT L.target_url_id
+FROM S
+JOIN html_content_bridge AS HCB ON S.html_id = HCB.html_id
+JOIN link_fact AS L ON HCB.content_id = L.content_id
+JOIN url_dim AS U ON L.target_url_id = U.url_id
+WHERE U.domain_id = S.domain_id
+AND U.is_webpage = true
+GROUP BY L.target_url_id
+)
+select TU.url
+from T
+join url_dim AS TU ON T.target_url_id = TU.url_id
+LEFT JOIN S ON T.target_url_id = S.url_id
+WHERE S.url_id IS NULL
+order by TU.url;
+
+
+
+"table_name"	"column_name"
+"content_dim"	"content_text"
+"content_dim"	"content_type"
+"content_dim"	"fragment_hash"
+"content_dim"	"plain_hash"
+"content_dim"	"fragment_text"
+"content_dim"	"content_hash"
+"content_dim"	"content_id"
+"content_dim"	"plain_text"
+"content_dim"	"domain_id"
+"crawl_dim"	"domain_id"
+"crawl_dim"	"crawl_id"
+"crawl_dim"	"crawl_timestamp"
+"domain_dim"	"domain_id"
+"domain_dim"	"domain_name"
+"download_fact"	"headers"
+"download_fact"	"download_id"
+"download_fact"	"domain_id"
+"download_fact"	"url_id"
+"download_fact"	"html_id"
+"download_fact"	"download_timestamp"
+"download_fact"	"http_status"
+"download_fact"	"crawl_id"
+"html_content_bridge"	"domain_id"
+"html_content_bridge"	"path"
+"html_content_bridge"	"bridge_id"
+"html_content_bridge"	"content_id"
+"html_content_bridge"	"html_id"
+"html_dim"	"html_data"
+"html_dim"	"html_hash"
+"html_dim"	"html_id"
+"html_dim"	"domain_id"
+"link_fact"	"link_attr"
+"link_fact"	"link_id"
+"link_fact"	"is_internal"
+"link_fact"	"link_tag"
+"link_fact"	"content_id"
+"link_fact"	"domain_id"
+"link_fact"	"target_url_id"
+"link_fact"	"link_type"
+"link_fact"	"link_text"
+"url_dim"	"is_resource"
+"url_dim"	"url"
+"url_dim"	"protocol"
+"url_dim"	"path"
+"url_dim"	"resource_type"
+"url_dim"	"url_id"
+"url_dim"	"domain_id"
+"url_dim"	"file_extension"
+"url_dim"	"last_status_code"
+"url_dim"	"is_webpage"
+
+
+
+SELECT 
+    table_schema, 
+    table_name, 
+    column_name, 
+    data_type, 
+    is_nullable, 
+    column_default 
+FROM information_schema.columns 
+WHERE table_schema NOT IN ('information_schema', 'pg_catalog');

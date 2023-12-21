@@ -11,7 +11,7 @@ BOT_NAME = "myscraper"
 
 LOG_LEVEL = 'INFO'
 
-DB_SETTINGS = {
+PG_DB_SETTINGS = {
     'database': 'crown_scraping',
     'user': 'crown_scraping',
     'password': 'xAK9q5IMnj1opUh3',
@@ -19,11 +19,25 @@ DB_SETTINGS = {
     'port': '5432'
 }
 
+SQLITE_DB_SETTINGS = {
+    'database' : 'crawl.db'
+}
+
+DB_SETTINGS = SQLITE_DB_SETTINGS
+
 CLEAR_DB = False
-CRAWL_DOMAIN = 'ballet.zavidan.info'
+
+# CRAWL_DOMAIN = 'crownrelo-co-nz.archive.zavidan.nz'
+        # self.domain_name : str = domain_name or 'crownrelo-co-nz.archive.zavidan.nz'
+        # self.domain_name : str = domain_name or 'www.graceremovals.co.nz'
+CRAWL_DOMAIN : str = 'ballet.zavidan.info'
+        # self.domain_name : str = domain_name or 'www.crownrelo.co.nz'
 
 SPIDER_MODULES = ["myscraper.spiders"]
 NEWSPIDER_MODULE = "myscraper.spiders"
+
+REDIRECT_ENABLED = False
+FOLLOW_RESOURCES = False
 
 ITEM_PIPELINES = {
    'myscraper.pipelines.downloads_pipe.DownloadsPipe': 300,
@@ -122,11 +136,11 @@ FEED_EXPORT_ENCODING = "utf-8"
 
 # Enable AutoThrottle to automatically adjust the scraping speed based on the server's response times and load.
 AUTOTHROTTLE_ENABLED = True
-AUTOTHROTTLE_START_DELAY = 1  # Initial delay (in seconds) between requests.
-AUTOTHROTTLE_MAX_DELAY = 3  # Maximum delay (in seconds) between requests.
+AUTOTHROTTLE_START_DELAY = 0.3  # Initial delay (in seconds) between requests.
+AUTOTHROTTLE_MAX_DELAY = 1  # Maximum delay (in seconds) between requests.
 
 # Introduce a delay between consecutive requests.
-DOWNLOAD_DELAY = 1  # Delay (in seconds) between consecutive requests.
+DOWNLOAD_DELAY = 0.3  # Delay (in seconds) between consecutive requests.
 
 # Limit the number of concurrent requests.
 CONCURRENT_REQUESTS = 3
