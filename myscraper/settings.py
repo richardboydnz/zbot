@@ -28,9 +28,9 @@ DB_SETTINGS = SQLITE_DB_SETTINGS
 CLEAR_DB = True
 
 # CRAWL_DOMAIN = 'crownrelo-co-nz.archive.zavidan.nz'
-        # self.domain_name : str = domain_name or 'crownrelo-co-nz.archive.zavidan.nz'
+CRAWL_DOMAIN : str = 'crownrelo-co-nz.archive.zavidan.nz'
         # self.domain_name : str = domain_name or 'www.graceremovals.co.nz'
-CRAWL_DOMAIN : str = 'ballet.zavidan.info'
+# CRAWL_DOMAIN : str = 'ballet.zavidan.info'
         # self.domain_name : str = domain_name or 'www.crownrelo.co.nz'
 
 SPIDER_MODULES = ["myscraper.spiders"]

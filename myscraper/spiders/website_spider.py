@@ -31,8 +31,8 @@ class WebsiteSpider(CachedSpider):
     def from_crawler(cls, crawler, *args, **kwargs):
         # Call the base implementation first to get the spider object
         spider = super().from_crawler(crawler, *args, **kwargs)
-        return spider.apply_settings(crawler.settings)
-
+        spider.apply_settings(crawler.settings)
+        return spider
         # settings = crawler.settings
 
         # db_settings = settings.getdict('DB_SETTINGS')
@@ -207,21 +207,25 @@ class WebsiteSpider(CachedSpider):
         yield self.create_download_item(response, html_item)
 
         for content_bs, path in get_fragments(response.text):
-            logging.debug(f'parse fragment {path}')
-            content_type = content_bs.name
-            content_text = str(content_bs)
-            content_hash=hash64(content_text)
             path_str = str(path)
-            # print('------make fragment request', content_type)
+            content_str = str(content_bs)
+            content_type = content_bs.name
 
-            yield make_request(
-                url=f'{response.url}{fragment_separator}{str(content_hash)}',
-                method='HTML',
-                callback=self.parse_fragment,
-                errback=self.parse_error,
-                meta={ 'content': content_text, 'content_hash': content_hash},
-                cb_kwargs={'html_hash': html_item['html_hash'], 'content_hash': content_hash, 'path': path_str, 'content_type': content_type, 'orig_response': response  }
-            )
+            yield self.make_fragment_req(url=response.url, content = content_str, content_type = content_type, path_str=path_str, html_hash= html_item['html_hash'])
+            # logging.debug(f'parse fragment {path}')
+            # content_text = str(content_bs)
+            # content_hash=hash64(content_text)
+            # path_str = str(path)
+            # # print('------make fragment request', content_type)
+
+            # yield make_request(
+            #     url=f'{response.url}{fragment_separator}{str(content_hash)}',
+            #     method='HTML',
+            #     callback=self.parse_fragment,
+            #     errback=self.parse_error,
+            #     meta={ 'content': content_text, 'content_hash': content_hash},
+            #     cb_kwargs={'html_hash': html_item['html_hash'], 'content_hash': content_hash, 'path': path_str, 'content_type': content_type }
+            # )
 
     def parse_fragment(self, response: Response, html_hash, content_hash, path, **kwargs):
         logging.info(f'------ parse_fragment {response}')
@@ -372,5 +376,20 @@ class WebsiteSpider(CachedSpider):
         return self.crawl_item
 
 
+    def make_fragment_req(self, url, html_hash, content, content_type, path_str ):
+        logging.debug(f'parse fragment {path_str}')
+        content_hash=hash64(content)
+
+        return make_request(
+            url=f'{url}{fragment_separator}{str(content_hash)}',
+            method='HTML',
+            callback=self.parse_fragment,
+            errback=self.parse_error,
+            meta={ 'content': content, 'content_hash': content_hash},
+            cb_kwargs={'html_hash': html_hash, 'content_hash': content_hash, 'path': path_str, 'content_type': content_type  }
+        )
+
+
 def make_request(url, **kwargs):
     return Request(url, **kwargs)
+
